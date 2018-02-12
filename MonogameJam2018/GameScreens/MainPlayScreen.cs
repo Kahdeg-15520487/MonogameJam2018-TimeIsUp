@@ -21,16 +21,17 @@ namespace TimeIsUp.GameScreens {
 		Canvas canvas;
 		Camera camera;
 		Map map;
-		float maxdepth;
+		internal static float maxdepth;
 		World world;
 		List<IMovableObject> MovableObjects;
 		Player player;
 
-		Texture2D spritesheet;
-		Texture2D pixel;
-		SpriteFont font;
-		Dictionary<SpriteSheetRectName, Rectangle> spriterects;
+		internal static Texture2D spritesheet;
+		internal static SpriteFont font;
+		internal static Dictionary<SpriteSheetRectName, Rectangle> spriterects;
 		private Vector2 pppp = new Vector2(0, -60);
+
+		private Vector2 spawnpoint;
 
 		public MainPlayScreen(GraphicsDevice device) : base(device, "MainPlayScreen") { }
 
@@ -44,7 +45,7 @@ namespace TimeIsUp.GameScreens {
 			var temp = File.ReadAllText(@"Content/spritesheet/spritesheet.json");
 			spriterects = JsonConvert.DeserializeObject<List<KeyValuePair<string, Rectangle>>>(temp).ToDictionary(kvp => kvp.Key.ToEnum<SpriteSheetRectName>(), kvp => kvp.Value);
 
-			map = MapLoader.LoadMap("test.tmx"); // new TmxMap(Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", "test.tmx"));
+			map = MapLoader.LoadMap("lvl1.tmx"); // new TmxMap(Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", "test.tmx"));
 			maxdepth = ((map.Width + 1) + (map.Height + 1) + (map.Depth + 1)) * 10;
 
 			world = new World(map.Width, map.Height);
@@ -60,21 +61,45 @@ namespace TimeIsUp.GameScreens {
 
 			MovableObjects = new List<IMovableObject>();
 
+			List<Object> MarkedForRemove = new List<Object>();
+			spawnpoint = new Vector2();
+
 			foreach (var obj in map.Objects) {
 				var box = world.Create(obj.BoundingBox.X, obj.BoundingBox.Y, obj.BoundingBox.Width, obj.BoundingBox.Height);
 				box.AddTags(obj.CollisionTag);
+				obj.CollsionBox = box;
 				if (obj.Name.GetCollisionTag() == CollisionTag.PushableBlock) {
-					var block = new Block() { CollisionBox = box };
+					MarkedForRemove.Add(obj);
+					var block = new Block() { CollisionBox = box, Object = obj };
 					MovableObjects.Add(block);
 					box.Data = block;
 				}
 				else {
-					box.Data = obj;
+					if (obj.Name == SpriteSheetRectName.Floor_E) {
+						spawnpoint = new Vector2(obj.Position.X, obj.Position.Y);
+						MarkedForRemove.Add(obj);
+					}
+					else {
+						if (obj.Name.GetCollisionTag() == CollisionTag.FloorSwitch) {
+							var door = map.FindObject(x => x.Name.GetCollisionTag() == CollisionTag.DoorClosed);
+							obj.Activate = Behaviour.RunAction(Behaviour.OpenDoor(door));
+							obj.Deactivate = Behaviour.RunAction(Behaviour.CloseDoor(door));
+						}
+						box.Data = obj;
+					}
 				}
 			}
 
+			foreach (var obj in MarkedForRemove) {
+				map.Objects.Remove(obj);
+			}
+
+			foreach (var obj in MovableObjects) {
+				obj.LoadContent();
+			}
+
 			player = new Player {
-				CollisionBox = world.Create(5, 35, 0.5f, 0.5f)
+				CollisionBox = world.Create(spawnpoint.X, spawnpoint.Y, 0.5f, 0.5f)
 			};
 			player.LoadContent();
 			player.Origin = new Vector2(128, 512);
@@ -94,6 +119,11 @@ namespace TimeIsUp.GameScreens {
 		}
 
 		public override void Update(GameTime gameTime) {
+
+			if (HelperMethod.IsKeyPress(Keys.P, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
+				Init();
+			}
+
 			canvas.Update(gameTime, CONTENT_MANAGER.CurrentInputState, CONTENT_MANAGER.LastInputState);
 			//player.Update(gameTime, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState);
 			for (int i = 0; i < MovableObjects.Count; i++) {
@@ -145,7 +175,7 @@ namespace TimeIsUp.GameScreens {
 					}
 					if (map.Walls[y][x] != SpriteSheetRectName.None) {
 						spriteBatch.Draw(spritesheet, IsoPos, spriterects[map.Walls[y][x]], Color.White, 0f, spriteOrigin, Constant.SCALE, SpriteEffects.None, dos);
-						spriteBatch.DrawString(font, dos.ToString() + Environment.NewLine + new Vector2(x, y).ToString(), IsoPos, Color.Black);
+						//spriteBatch.DrawString(font, dos.ToString() + Environment.NewLine + new Vector2(x, y).ToString(), IsoPos, Color.Black);
 					}
 				}
 			}
@@ -155,7 +185,7 @@ namespace TimeIsUp.GameScreens {
 				var dos = 0.5f - ((obj.Position.X + obj.Position.Y + obj.Position.Z) / maxdepth) - 0.001f;
 				Vector2 IsoPos = obj.Position.WorldToIso();
 				spriteBatch.Draw(spritesheet, IsoPos, spriterects[obj.Name], Color.White, 0f, obj.Origin, Constant.SCALE, SpriteEffects.None, dos);
-				spriteBatch.DrawString(font, dos.ToString() + Environment.NewLine + obj.Position.ToString(), IsoPos, Color.Black);
+				//spriteBatch.DrawString(font, dos.ToString() + Environment.NewLine + obj.Position.ToString(), IsoPos, Color.Black);
 			}
 
 			var depthoffset = 0.5f - ((player.WorldPos.X + player.WorldPos.Y) / maxdepth) - 0.002f;
@@ -163,12 +193,12 @@ namespace TimeIsUp.GameScreens {
 			MovableObjects.ForEach(x => x.Draw(spriteBatch, gameTime, depthoffset));
 			spriteBatch.EndSpriteBatch();
 
-			drawBatch.Begin();
-			//drawBatch.DrawLine(Pen.Black, p1, p2);
-			var b = world.Bounds.ToRectangle();
-			var b1 = new Vector2(b.X, b.Y);
-			world.DrawDebug((int)b1.X, (int)b1.Y, b.Width, b.Height, DrawCell, DrawBox, DrawString);
-			drawBatch.End();
+			//drawBatch.Begin();
+			////drawBatch.DrawLine(Pen.Black, p1, p2);
+			//var b = world.Bounds.ToRectangle();
+			//var b1 = new Vector2(b.X, b.Y);
+			//world.DrawDebug((int)b1.X, (int)b1.Y, b.Width, b.Height, DrawCell, DrawBox, DrawString);
+			//drawBatch.End();
 
 			spriteBatch.BeginSpriteBatch();
 			canvas.Draw(spriteBatch, gameTime);

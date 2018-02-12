@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using TimeIsUp.GameScreens;
 using Utility;
 using Utility.Drawing.Animation;
 using VT2 = Microsoft.Xna.Framework.Vector2;
@@ -36,10 +37,11 @@ namespace TimeIsUp {
 				animatedEntity.Origin = value;
 			}
 		}
+		public VT2 Velocity { get; set; } = VT2.Zero;
 
 		public void LoadContent() {
 			var animationSpriteSheet = CONTENT_MANAGER.Sprites["animation"];
-			font = CONTENT_MANAGER.Fonts["default"];
+			font = MainPlayScreen.font;
 			var frames = JsonConvert.DeserializeObject<List<KeyValuePair<string, Rectangle>>>(File.ReadAllText(@"Content/spritesheet/animation.json"));
 			var anims = new List<Animation>();
 			var animnames = Enum.GetNames(typeof(AnimationName));
@@ -89,7 +91,7 @@ namespace TimeIsUp {
 		private void MovePlayer(KeyboardState currentKeyboardState, KeyboardState lastKeyboardState) {
 			var curpos = new VT2(CollisionBox.X, CollisionBox.Y);
 			var direction = Direction.none;
-			var velocity = VT2.Zero;
+
 			if (HelperMethod.IsKeyHold(Keys.A, currentKeyboardState, lastKeyboardState)) {
 				direction = Direction.left;
 			}
@@ -105,28 +107,28 @@ namespace TimeIsUp {
 
 			switch (direction) {
 				case Direction.up:
-					velocity = new VT2(0, -0.05f);
+					Velocity = new VT2(0, -0.05f);
 					dir = direction;
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_up.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_up.ToString());
 					}
 					break;
 				case Direction.down:
-					velocity = new VT2(0, 0.05f);
+					Velocity = new VT2(0, 0.05f);
 					dir = direction;
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_down.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_down.ToString());
 					}
 					break;
 				case Direction.right:
-					velocity = new VT2(0.05f, 0);
+					Velocity = new VT2(0.05f, 0);
 					dir = direction;
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_right.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_right.ToString());
 					}
 					break;
 				case Direction.left:
-					velocity = new VT2(-0.05f, 0);
+					Velocity = new VT2(-0.05f, 0);
 					dir = direction;
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_left.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_left.ToString());
@@ -140,7 +142,7 @@ namespace TimeIsUp {
 					break;
 			}
 
-			var move = CollisionBox.Move(curpos.X + velocity.X, curpos.Y + velocity.Y, x => {
+			var move = CollisionBox.Move(curpos.X + Velocity.X, curpos.Y + Velocity.Y, x => {
 
 				if (x.Other.HasTag(CollisionTag.FloorSwitch)) {
 					return CollisionResponses.Cross;
@@ -159,7 +161,7 @@ namespace TimeIsUp {
 				}
 
 				if (x.Other.HasTag(CollisionTag.PushableBlock)) {
-					return CollisionResponses.Touch;
+					return CollisionResponses.Slide;
 				}
 
 				return CollisionResponses.Slide;
@@ -169,11 +171,13 @@ namespace TimeIsUp {
 			if (floorswitch != null) {
 				Object obj = (Object)floorswitch.Box.Data;
 				obj.Name = SpriteSheetRectName.ButtonPressed_E;
+				obj.Activate();
 				lastSteppedFloorWitch = obj;
 			}
 			else {
 				if (lastSteppedFloorWitch != null) {
 					lastSteppedFloorWitch.Name = SpriteSheetRectName.Button_E;
+					lastSteppedFloorWitch.Deactivate();
 					lastSteppedFloorWitch = null;
 				}
 			}
@@ -204,14 +208,15 @@ namespace TimeIsUp {
 			if (block != null) {
 				Block obj = (Block)block.Box.Data;
 				var n = block.Normal;
-				obj.Velocity = new VT2(n.X, n.Y);
+				obj.Velocity = new VT2(n.X * n.X, n.Y * n.Y) * Velocity;
 			}
 
 			animatedEntity.Position = IsoPos;
+			Velocity = VT2.Zero;
 		}
 
 		public void Draw(SpriteBatch spriteBatch, GameTime gameTime, float depth) {
-			spriteBatch.DrawString(font, depth.ToString() + Environment.NewLine + WorldPos.ToString(), IsoPos, Color.Black);
+			//spriteBatch.DrawString(font, depth.ToString() + Environment.NewLine + WorldPos.ToString(), IsoPos, Color.Black);
 			animatedEntity.Draw(spriteBatch, gameTime, depth);
 		}
 	}

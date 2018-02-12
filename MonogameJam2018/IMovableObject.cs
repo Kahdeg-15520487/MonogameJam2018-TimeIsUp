@@ -10,8 +10,8 @@ namespace TimeIsUp {
 		Vector2 Origin { get; set; }
 		Vector2 WorldPos { get; }
 
-		void Draw(SpriteBatch spriteBatch, GameTime gameTime, float depth);
 		void LoadContent();
 		void Update(GameTime gameTime, KeyboardState currentKeyboardState, KeyboardState lastKeyboardState);
+		void Draw(SpriteBatch spriteBatch, GameTime gameTime, float depth);
 	}
 }
