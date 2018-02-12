@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Humper;
+using Microsoft.Xna.Framework;
 
 namespace TimeIsUp {
 	internal class Object {
@@ -6,6 +8,9 @@ namespace TimeIsUp {
 		public Vector2 Origin { get; set; }
 		public SpriteSheetRectName Name { get; set; }
 		public Humper.Base.RectangleF BoundingBox { get; set; }
+		public IBox CollsionBox { get; set; }
 		public CollisionTag CollisionTag { get; set; }
+		public Action Activate { get; set; }
+		public Action Deactivate { get; set; }
 	}
 }

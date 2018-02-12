@@ -114,7 +114,35 @@ namespace TimeIsUp {
 				case SpriteSheetRectName.WallSwitchOn_N:
 					return SpriteSheetRectName.WallSwitchOff_N;
 			}
-			return SpriteSheetRectName.None;
+			return swt;
+		}
+
+		public static SpriteSheetRectName OpenDoor(this SpriteSheetRectName door) {
+			switch (door) {
+				case SpriteSheetRectName.WallDoorClosed_E:
+					return SpriteSheetRectName.WallDoorOpen_E;
+				case SpriteSheetRectName.WallDoorClosed_S:
+					return SpriteSheetRectName.WallDoorOpen_S;
+				case SpriteSheetRectName.WallDoorClosed_W:
+					return SpriteSheetRectName.WallDoorOpen_W;
+				case SpriteSheetRectName.WallDoorClosed_N:
+					return SpriteSheetRectName.WallDoorOpen_N;
+			}
+			return door;
+		}
+
+		public static SpriteSheetRectName CloseDoor(this SpriteSheetRectName door) {
+			switch (door) {
+				case SpriteSheetRectName.WallDoorOpen_E:
+					return SpriteSheetRectName.WallDoorClosed_E;
+				case SpriteSheetRectName.WallDoorOpen_S:
+					return SpriteSheetRectName.WallDoorClosed_S;
+				case SpriteSheetRectName.WallDoorOpen_W:
+					return SpriteSheetRectName.WallDoorClosed_W;
+				case SpriteSheetRectName.WallDoorOpen_N:
+					return SpriteSheetRectName.WallDoorClosed_N;
+			}
+			return door;
 		}
 
 		public static CollisionTag GetCollisionTag(this SpriteSheetRectName spriteSheetRectName) {

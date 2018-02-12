@@ -47,6 +47,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AnimationName.cs" />
+    <Compile Include="Behaviour.cs" />
     <Compile Include="Block.cs" />
     <Compile Include="Constant.cs" />
     <Compile Include="ExtensionMethod.cs" />

@@ -23,13 +23,17 @@ namespace TimeIsUp {
 			Collsion = collision;
 		}
 
-		internal Object FindObject(SpriteSheetRectName obj) {
+		public Object FindObject(SpriteSheetRectName obj) {
 			try {
-				return Objects.First(x => x.Name == obj);
+				return Objects.FirstOrDefault(x => x.Name == obj);
 			}
 			catch (Exception e) {
 				return null;
 			}
+		}
+
+		public Object FindObject(Func<Object, bool> predicate) {
+			return Objects.FirstOrDefault(predicate);
 		}
 	}
 }
