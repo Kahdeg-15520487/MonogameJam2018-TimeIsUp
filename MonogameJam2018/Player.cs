@@ -1,5 +1,4 @@
 ﻿using Humper;
-using Humper.Base;
 using Humper.Responses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -10,15 +9,22 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Utility;
 using Utility.Drawing.Animation;
 using VT2 = Microsoft.Xna.Framework.Vector2;
 
 namespace TimeIsUp {
-	class Player {
+	class Player : IMovableObject {
 		AnimatedEntity animatedEntity;
 		SpriteFont font;
+		Map map;
+
+		Direction dir;
+
+		Object lastSteppedFloorWitch = null;
+		Object lastLever;
+		private Object lastLadder;
+
 		public IBox CollisionBox { get; set; }
 		public VT2 WorldPos { get { return new VT2(CollisionBox.X, CollisionBox.Y); } }
 		public VT2 IsoPos { get { return WorldPos.WorldToIso(); } }
@@ -31,9 +37,9 @@ namespace TimeIsUp {
 			}
 		}
 
-		public void LoadContent(ContentManager content) {
-			var animationSpriteSheet = content.Load<Texture2D>(@"spritesheet/animation");
-			font = content.Load<SpriteFont>("default");
+		public void LoadContent() {
+			var animationSpriteSheet = CONTENT_MANAGER.Sprites["animation"];
+			font = CONTENT_MANAGER.Fonts["default"];
 			var frames = JsonConvert.DeserializeObject<List<KeyValuePair<string, Rectangle>>>(File.ReadAllText(@"Content/spritesheet/animation.json"));
 			var anims = new List<Animation>();
 			var animnames = Enum.GetNames(typeof(AnimationName));
@@ -63,25 +69,37 @@ namespace TimeIsUp {
 
 			MovePlayer(currentKeyboardState, lastKeyboardState);
 
+			Interact(currentKeyboardState, lastKeyboardState);
+
 			animatedEntity.Update(gameTime);
 		}
 
-		Direction dir;
+		private void Interact(KeyboardState currentKeyboardState, KeyboardState lastKeyboardState) {
+			//todo make interactable object a universal method
+			if (HelperMethod.IsKeyPress(Keys.E, currentKeyboardState, lastKeyboardState)) {
+				if (lastLever != null) {
+					lastLever.Name = lastLever.Name.FlipSwitch();
+				}
+				if (lastLadder != null) {
+					//next level stuff
+				}
+			}
+		}
 
 		private void MovePlayer(KeyboardState currentKeyboardState, KeyboardState lastKeyboardState) {
 			var curpos = new VT2(CollisionBox.X, CollisionBox.Y);
 			var direction = Direction.none;
 			var velocity = VT2.Zero;
-			if (HelperMethod.IsKeyHold(currentKeyboardState, lastKeyboardState, Keys.A)) {
+			if (HelperMethod.IsKeyHold(Keys.A, currentKeyboardState, lastKeyboardState)) {
 				direction = Direction.left;
 			}
-			if (HelperMethod.IsKeyHold(currentKeyboardState, lastKeyboardState, Keys.D)) {
+			if (HelperMethod.IsKeyHold(Keys.D, currentKeyboardState, lastKeyboardState)) {
 				direction = Direction.right;
 			}
-			if (HelperMethod.IsKeyHold(currentKeyboardState, lastKeyboardState, Keys.W)) {
+			if (HelperMethod.IsKeyHold(Keys.W, currentKeyboardState, lastKeyboardState)) {
 				direction = Direction.up;
 			}
-			if (HelperMethod.IsKeyHold(currentKeyboardState, lastKeyboardState, Keys.S)) {
+			if (HelperMethod.IsKeyHold(Keys.S, currentKeyboardState, lastKeyboardState)) {
 				direction = Direction.down;
 			}
 
@@ -122,24 +140,73 @@ namespace TimeIsUp {
 					break;
 			}
 
-			CollisionBox.Move(curpos.X + velocity.X, curpos.Y + velocity.Y, x => {
+			var move = CollisionBox.Move(curpos.X + velocity.X, curpos.Y + velocity.Y, x => {
+
 				if (x.Other.HasTag(CollisionTag.FloorSwitch)) {
-					IBox door = (Box)x.Other.Data;
-					if (door.HasTag(CollisionTag.DoorClosed)) {
-						door.RemoveTags(CollisionTag.DoorClosed);
-						door.AddTags(CollisionTag.DoorOpened);
-						var doorpos = (Point)door.Data;
-						GameManager.map.Walls[doorpos.Y][doorpos.X] = SpriteSheetRectName.WallDoorOpen_S;
-						GameManager.map.FindObject(SpriteSheetRectName.Slab_E).Origin += new VT2(0, 1);
-						Origin += new VT2(0, 1);
-					}
 					return CollisionResponses.Cross;
 				}
+
+				if (x.Other.HasTag(CollisionTag.Lever)) {
+					return CollisionResponses.Cross;
+				}
+
 				if (x.Other.HasTag(CollisionTag.DoorOpened)) {
 					return CollisionResponses.Cross;
 				}
+
+				if (x.Other.HasTag(CollisionTag.Ladder)) {
+					return CollisionResponses.Cross;
+				}
+
+				if (x.Other.HasTag(CollisionTag.PushableBlock)) {
+					return CollisionResponses.Touch;
+				}
+
 				return CollisionResponses.Slide;
 			});
+
+			var floorswitch = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.FloorSwitch));
+			if (floorswitch != null) {
+				Object obj = (Object)floorswitch.Box.Data;
+				obj.Name = SpriteSheetRectName.ButtonPressed_E;
+				lastSteppedFloorWitch = obj;
+			}
+			else {
+				if (lastSteppedFloorWitch != null) {
+					lastSteppedFloorWitch.Name = SpriteSheetRectName.Button_E;
+					lastSteppedFloorWitch = null;
+				}
+			}
+
+			var lever = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.Lever));
+			if (lever != null) {
+				Object obj = (Object)lever.Box.Data;
+				lastLever = obj;
+			}
+			else {
+				if (lastLever != null) {
+					lastLever = null;
+				}
+			}
+
+			var ladder = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.Ladder));
+			if (ladder != null) {
+				Object obj = (Object)ladder.Box.Data;
+				lastLadder = obj;
+			}
+			else {
+				if (lastLadder != null) {
+					lastLadder = null;
+				}
+			}
+
+			var block = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.PushableBlock));
+			if (block != null) {
+				Block obj = (Block)block.Box.Data;
+				var n = block.Normal;
+				obj.Velocity = new VT2(n.X, n.Y);
+			}
+
 			animatedEntity.Position = IsoPos;
 		}
 

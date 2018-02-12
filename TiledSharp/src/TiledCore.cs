@@ -50,8 +50,10 @@ namespace TiledSharp
             }
             else
             {
-                // TODO: Check for existence of file
+				// TODO: Check for existence of file
+				if (File.Exists(filepath)) {
 
+				}
                 xDoc = XDocument.Load(filepath);
                 TmxDirectory = Path.GetDirectoryName(filepath);
             }

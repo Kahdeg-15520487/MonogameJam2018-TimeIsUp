@@ -4,6 +4,7 @@ using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using TiledSharp;
 using TimeIsUp.GameScreens;
 using Utility;
 using Utility.Drawing;
@@ -12,12 +13,18 @@ using Utility.ScreenManager;
 namespace TimeIsUp {
 	public class GameManager : Game {
 		GraphicsDeviceManager graphics;
-		internal static object map;
+		internal static Map map;
 
 		public GameManager() {
 			graphics = new GraphicsDeviceManager(this);
+			graphics.PreferredBackBufferWidth = 800;
+			graphics.PreferredBackBufferHeight = 600;
+			graphics.ApplyChanges();
+
 			Content.RootDirectory = "Content";
 			CONTENT_MANAGER.Content = Content;
+			IsMouseVisible = true;
+			
 		}
 
 		protected override void Initialize() {
@@ -40,7 +47,12 @@ namespace TimeIsUp {
 		protected override void LoadContent() {
 			CONTENT_MANAGER.spriteBatch = new SpriteBatch(GraphicsDevice);
 
+			#region Load font
+			CONTENT_MANAGER.LoadFont("default");
+			#endregion
+
 			#region Load spritesheet
+			CONTENT_MANAGER.LoadSprites("animation", "spritesheet");
 			#endregion
 
 			#region Load audio
@@ -61,13 +73,9 @@ namespace TimeIsUp {
 		}
 
 		protected override void Draw(GameTime gameTime) {
-			GraphicsDevice.Clear(Color.CornflowerBlue);
+			GraphicsDevice.Clear(Color.WhiteSmoke);
 
-			CONTENT_MANAGER.BeginSpriteBatch();
-			{
-				SCREEN_MANAGER.Draw(CONTENT_MANAGER.spriteBatch, gameTime);
-			}
-			CONTENT_MANAGER.EndSpriteBatch();
+			SCREEN_MANAGER.Draw(CONTENT_MANAGER.spriteBatch, gameTime);
 
 			base.Draw(gameTime);
 		}

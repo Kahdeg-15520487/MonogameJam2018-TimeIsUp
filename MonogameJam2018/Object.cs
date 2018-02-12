@@ -5,6 +5,7 @@ namespace TimeIsUp {
 		public Vector3 Position { get; set; }
 		public Vector2 Origin { get; set; }
 		public SpriteSheetRectName Name { get; set; }
-		public Rectangle BoundingBox { get; set; }
+		public Humper.Base.RectangleF BoundingBox { get; set; }
+		public CollisionTag CollisionTag { get; set; }
 	}
 }
