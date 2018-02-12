@@ -49,6 +49,7 @@
     <Compile Include="AnimationName.cs" />
     <Compile Include="Behaviour.cs" />
     <Compile Include="Block.cs" />
+    <Compile Include="CompressHelper.cs" />
     <Compile Include="Constant.cs" />
     <Compile Include="ExtensionMethod.cs" />
     <Compile Include="GameManager.cs" />

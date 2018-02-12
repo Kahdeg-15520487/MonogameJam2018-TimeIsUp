@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,60 +8,72 @@ using System.Text;
 using System.Threading.Tasks;
 using TiledSharp;
 using Utility;
+using Utility.Storage;
 
 namespace TimeIsUp {
 	class MapLoader {
 		public static Map LoadMap(string mapname) {
-			var mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname);
+			var mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".txt");
+			if (File.Exists(mappath)) {
+				//load txt map
+				var mapdata = CompressHelper.UnZip(File.ReadAllText(mappath));
+				return JsonConvert.DeserializeObject<Map>(mapdata);
+			}
+			else {
+				//process tmx map and spit out txt map
+				mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".tmx");
+				var map = new TmxMap(mappath);
 
-			var map = new TmxMap(mappath);
+				var mapwidth = map.Width;
+				var mapheight = map.Height;
+				SpriteSheetRectName[,] f = new SpriteSheetRectName[mapheight, mapwidth];
+				SpriteSheetRectName[,] w = new SpriteSheetRectName[mapheight, mapwidth];
+				List<Object> o = new List<Object>();
 
-			var mapwidth = map.Width;
-			var mapheight = map.Height;
-			SpriteSheetRectName[][] f = new SpriteSheetRectName[mapheight][];
-			SpriteSheetRectName[][] w = new SpriteSheetRectName[mapheight][];
-			List<Object> o = new List<Object>();
+				f = HelperMethod.Make2DArray(map.Layers["floor"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
+				w = HelperMethod.Make2DArray(map.Layers["wall"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
+				var objects = HelperMethod.Make2DArray(map.Layers["object"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
 
-			var floors = HelperMethod.Make2DArray(map.Layers["floor"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
-			var walls = HelperMethod.Make2DArray(map.Layers["wall"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
-			var objects = HelperMethod.Make2DArray(map.Layers["object"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
+				var collision = new List<Humper.Base.RectangleF>();
 
-			var collision = new List<Humper.Base.RectangleF>();
+				for (int y = 0; y < mapheight; y++) {
+					for (int x = 0; x < mapwidth; x++) {
+						//f[y, x] = floors[y, x];
+						//w[y, x] = walls[y, x];
 
-			for (int y = 0; y < mapheight; y++) {
-				f[y] = new SpriteSheetRectName[mapwidth];
-				w[y] = new SpriteSheetRectName[mapwidth];
-
-				for (int x = 0; x < mapwidth; x++) {
-					f[y][x] = floors[y, x];
-					w[y][x] = walls[y, x];
-					var temp = objects[y, x];
-					if (temp != SpriteSheetRectName.None) {
-						var obj = new Object() { Position = new Vector3(x, y, 0), Origin = Constant.SPRITE_ORIGIN, Name = temp };
-						if (temp.GetCollisionTag() != CollisionTag.None) {
-							obj.BoundingBox = GetCollsionBox(new Vector2(x, y), temp);
-							obj.CollisionTag = temp.GetCollisionTag();
+						var temp = objects[y, x];
+						if (temp != SpriteSheetRectName.None) {
+							var obj = new Object() { Position = new Vector3(x, y, 0), Origin = Constant.SPRITE_ORIGIN, Name = temp };
+							if (temp.GetCollisionTag() != CollisionTag.None) {
+								obj.BoundingBox = GetCollsionBox(new Vector2(x, y), temp);
+								obj.CollisionTag = temp.GetCollisionTag();
+							}
+							o.Add(obj);
 						}
-						o.Add(obj);
-					}
 
-					if (f[y][x] == SpriteSheetRectName.None) {
-						collision.Add(new Humper.Base.RectangleF(x - 0.3f, y - 0.3f, 1, 1));
-					}
+						if (f[y, x] == SpriteSheetRectName.None) {
+							collision.Add(new Humper.Base.RectangleF(x - 0.3f, y - 0.3f, 1, 1));
+						}
 
-					if (w[y][x].GetCollisionTag() != CollisionTag.None) {
-						collision.Add(GetCollsionBox(new Vector2(x, y), w[y][x]));
+						if (w[y, x].GetCollisionTag() != CollisionTag.None) {
+							collision.Add(GetCollsionBox(new Vector2(x, y), w[y, x]));
+						}
 					}
 				}
+
+				//map border
+				//collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, 0.3f, map.Height));
+				collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, mapwidth, 0.3f));
+				collision.Add(new Humper.Base.RectangleF(mapwidth - 0.3f, 0 - 0.3f, 0.3f, map.Height));
+				collision.Add(new Humper.Base.RectangleF(0 - 0.3f, mapheight - 0.3f, mapwidth, 0.3f));
+
+				var processedMap = new Map(mapwidth, mapheight, 3, f, w, o, collision.ToArray());
+				mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".txt");
+
+				File.WriteAllText(mappath, CompressHelper.Zip(JsonConvert.SerializeObject(processedMap)));
+
+				return processedMap;
 			}
-
-			//map border
-			//collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, 0.3f, map.Height));
-			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, mapwidth, 0.3f));
-			collision.Add(new Humper.Base.RectangleF(mapwidth - 0.3f, 0 - 0.3f, 0.3f, map.Height));
-			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, mapheight - 0.3f, mapwidth, 0.3f));
-
-			return new Map(mapwidth, mapheight, 3, f, w, o, collision.ToArray());
 		}
 
 		private static Humper.Base.RectangleF GetCollsionBox(Vector2 pos, SpriteSheetRectName spriteSheetRectName) {
@@ -95,8 +108,8 @@ namespace TimeIsUp {
 					break;
 
 				case CollisionTag.PushableBlock:
-					result.X = pos.X ;
-					result.Y = pos.Y ;
+					result.X = pos.X;
+					result.Y = pos.Y;
 					result.Width = 0.3f;
 					result.Height = 0.3f;
 					break;
@@ -123,7 +136,7 @@ namespace TimeIsUp {
 					break;
 				case CollisionTag.Ladder:
 					result.X = pos.X;
-					result.Y = pos.Y-0.3f;
+					result.Y = pos.Y - 0.3f;
 					result.Width = 0.3f;
 					result.Height = 0.2f;
 					break;

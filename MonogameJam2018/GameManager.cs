@@ -4,6 +4,7 @@ using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Newtonsoft.Json;
 using TiledSharp;
 using TimeIsUp.GameScreens;
 using Utility;
@@ -24,7 +25,12 @@ namespace TimeIsUp {
 			Content.RootDirectory = "Content";
 			CONTENT_MANAGER.Content = Content;
 			IsMouseVisible = true;
-			
+
+			JsonConvert.DefaultSettings = () => {
+				var settings = new JsonSerializerSettings();
+				settings.Converters.Add(new MapJsonConverter());
+				return settings;
+			};
 		}
 
 		protected override void Initialize() {

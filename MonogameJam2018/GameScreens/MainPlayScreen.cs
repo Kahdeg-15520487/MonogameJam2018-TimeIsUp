@@ -45,7 +45,7 @@ namespace TimeIsUp.GameScreens {
 			var temp = File.ReadAllText(@"Content/spritesheet/spritesheet.json");
 			spriterects = JsonConvert.DeserializeObject<List<KeyValuePair<string, Rectangle>>>(temp).ToDictionary(kvp => kvp.Key.ToEnum<SpriteSheetRectName>(), kvp => kvp.Value);
 
-			map = MapLoader.LoadMap("lvl1.tmx"); // new TmxMap(Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", "test.tmx"));
+			map = MapLoader.LoadMap("lvl1"); // new TmxMap(Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", "test.tmx"));
 			maxdepth = ((map.Width + 1) + (map.Height + 1) + (map.Depth + 1)) * 10;
 
 			world = new World(map.Width, map.Height);
@@ -170,11 +170,11 @@ namespace TimeIsUp.GameScreens {
 					var z = 0;
 					var dos = 0.5f - ((x + y + z) / maxdepth);
 					Vector2 IsoPos = (x, y, z).WorldToIso();
-					if (map.Floors[y][x] != SpriteSheetRectName.None) {
-						spriteBatch.Draw(spritesheet, IsoPos, spriterects[map.Floors[y][x]], Color.White, 0f, spriteOrigin, Constant.SCALE, SpriteEffects.None, 1f);
+					if (map.Floors[y, x] != SpriteSheetRectName.None) {
+						spriteBatch.Draw(spritesheet, IsoPos, spriterects[map.Floors[y, x]], Color.White, 0f, spriteOrigin, Constant.SCALE, SpriteEffects.None, 1f);
 					}
-					if (map.Walls[y][x] != SpriteSheetRectName.None) {
-						spriteBatch.Draw(spritesheet, IsoPos, spriterects[map.Walls[y][x]], Color.White, 0f, spriteOrigin, Constant.SCALE, SpriteEffects.None, dos);
+					if (map.Walls[y, x] != SpriteSheetRectName.None) {
+						spriteBatch.Draw(spritesheet, IsoPos, spriterects[map.Walls[y, x]], Color.White, 0f, spriteOrigin, Constant.SCALE, SpriteEffects.None, dos);
 						//spriteBatch.DrawString(font, dos.ToString() + Environment.NewLine + new Vector2(x, y).ToString(), IsoPos, Color.Black);
 					}
 				}
