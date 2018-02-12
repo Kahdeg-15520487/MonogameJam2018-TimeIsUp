@@ -21,29 +21,29 @@ namespace TimeIsUp {
 		left
 	}
 	enum CollisionTag {
-		DoorClosed = 0, //block player
+		None = 0,     //allow player pass through
 
-		DoorOpened = 1, //allow player passing through
+		DoorClosed = 1, //block player
 
-		Wall = 2,       //block player
-		Block = 4,      //block player
-		PushableBlock = 8,
+		DoorOpened = 2, //allow player passing through
 
-		FloorSwitch = 16,//when the player is stepping on the switch, do something
+		Wall = 4,       //block player
+		Block = 8,      //block player
+		PushableBlock = 16,
 
-		Lever = 32,     //when the player flip the lever, do something
+		FloorSwitch = 32,//when the player is stepping on the switch, do something
 
-		Elevator = 64,   //when the player is standing on the elevator,
-						 //bring player's z to this stair'z. z is height
+		Lever = 64,     //when the player flip the lever, do something
 
-		Hole = 128,     //make the player fall
+		Elevator = 128,   //when the player is standing on the elevator,
+						  //bring player's z to this stair'z. z is height
 
-		Stair = 256,        //bring player's z to this stair's z. z is height
+		Hole = 256,     //make the player fall
 
-		Ladder = 512,     //bring player's z to this ladder's next level's z. z is height
+		Stair = 512,        //bring player's z to this stair's z. z is height
 
-		Slab = 1024,       //bring player's z to this slab'z when enter. z is height
+		Ladder = 1024,     //bring player's z to this ladder's next level's z. z is height
 
-		None = 2048     //allow player pass through
+		Slab = 2048       //bring player's z to this slab'z when enter. z is height
 	}
 }

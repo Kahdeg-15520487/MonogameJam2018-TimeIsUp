@@ -24,12 +24,11 @@ namespace TimeIsUp {
 		}
 
 		public Object FindObject(SpriteSheetRectName obj) {
-			try {
-				return Objects.FirstOrDefault(x => x.Name == obj);
-			}
-			catch (Exception e) {
-				return null;
-			}
+			return Objects.FirstOrDefault(x => x.TileType == obj);
+		}
+
+		public Object FindObject(string objname) {
+			return Objects.FirstOrDefault(x => x.Name == objname);
 		}
 
 		public Object FindObject(Func<Object, bool> predicate) {

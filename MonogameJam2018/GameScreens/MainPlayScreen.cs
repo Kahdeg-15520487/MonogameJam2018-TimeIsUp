@@ -68,26 +68,26 @@ namespace TimeIsUp.GameScreens {
 				var box = world.Create(obj.BoundingBox.X, obj.BoundingBox.Y, obj.BoundingBox.Width, obj.BoundingBox.Height);
 				box.AddTags(obj.CollisionTag);
 				obj.CollsionBox = box;
-				if (obj.Name.GetCollisionTag() == CollisionTag.PushableBlock) {
+				if (obj.TileType.GetCollisionTag() == CollisionTag.PushableBlock) {
 					MarkedForRemove.Add(obj);
 					var block = new Block() { CollisionBox = box, Object = obj };
 					MovableObjects.Add(block);
 					box.Data = block;
 				}
 				else {
-					if (obj.Name == SpriteSheetRectName.Floor_E) {
-						spawnpoint = new Vector2(obj.Position.X, obj.Position.Y);
-						MarkedForRemove.Add(obj);
-					}
-					else {
-						if (obj.Name.GetCollisionTag() == CollisionTag.FloorSwitch) {
-							var door = map.FindObject(x => x.Name.GetCollisionTag() == CollisionTag.DoorClosed);
-							obj.Activate = Behaviour.RunAction(Behaviour.OpenDoor(door));
-							obj.Deactivate = Behaviour.RunAction(Behaviour.CloseDoor(door));
-						}
-						box.Data = obj;
-					}
+					//if (obj.TileType.GetCollisionTag() == CollisionTag.FloorSwitch) {
+					//	var door = map.FindObject(x => x.TileType.GetCollisionTag() == CollisionTag.DoorClosed);
+					//	obj.Activate = Behaviour.RunAction(Behaviour.OpenDoor(door));
+					//	obj.Deactivate = Behaviour.RunAction(Behaviour.CloseDoor(door));
+					//}
+					box.Data = obj;
 				}
+			}
+
+			var sp = map.FindObject(SpriteSheetRectName.Floor_E);
+			if (sp != null) {
+				spawnpoint = new Vector2(sp.Position.X, sp.Position.Y);
+				MarkedForRemove.Add(sp);
 			}
 
 			foreach (var obj in MarkedForRemove) {
@@ -184,8 +184,8 @@ namespace TimeIsUp.GameScreens {
 				//var dos = 0.7f - (((obj.Position.X) + (obj.Position.Y)) / maxdepth);
 				var dos = 0.5f - ((obj.Position.X + obj.Position.Y + obj.Position.Z) / maxdepth) - 0.001f;
 				Vector2 IsoPos = obj.Position.WorldToIso();
-				spriteBatch.Draw(spritesheet, IsoPos, spriterects[obj.Name], Color.White, 0f, obj.Origin, Constant.SCALE, SpriteEffects.None, dos);
-				//spriteBatch.DrawString(font, dos.ToString() + Environment.NewLine + obj.Position.ToString(), IsoPos, Color.Black);
+				spriteBatch.Draw(spritesheet, IsoPos, spriterects[obj.TileType], Color.White, 0f, obj.Origin, Constant.SCALE, SpriteEffects.None, dos);
+				spriteBatch.DrawString(font, obj.Position.ToString(), IsoPos, Color.Black);
 			}
 
 			var depthoffset = 0.5f - ((player.WorldPos.X + player.WorldPos.Y) / maxdepth) - 0.002f;

@@ -80,7 +80,7 @@ namespace TimeIsUp {
 			//todo make interactable object a universal method
 			if (HelperMethod.IsKeyPress(Keys.E, currentKeyboardState, lastKeyboardState)) {
 				if (lastLever != null) {
-					lastLever.Name = lastLever.Name.FlipSwitch();
+					lastLever.TileType = lastLever.TileType.FlipSwitch();
 				}
 				if (lastLadder != null) {
 					//next level stuff
@@ -170,13 +170,13 @@ namespace TimeIsUp {
 			var floorswitch = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.FloorSwitch));
 			if (floorswitch != null) {
 				Object obj = (Object)floorswitch.Box.Data;
-				obj.Name = SpriteSheetRectName.ButtonPressed_E;
+				obj.TileType = SpriteSheetRectName.ButtonPressed_E;
 				obj.Activate();
 				lastSteppedFloorWitch = obj;
 			}
 			else {
 				if (lastSteppedFloorWitch != null) {
-					lastSteppedFloorWitch.Name = SpriteSheetRectName.Button_E;
+					lastSteppedFloorWitch.TileType = SpriteSheetRectName.Button_E;
 					lastSteppedFloorWitch.Deactivate();
 					lastSteppedFloorWitch = null;
 				}

@@ -58,13 +58,13 @@ namespace TimeIsUp {
 			var floorswitch = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.FloorSwitch));
 			if (floorswitch != null) {
 				Object obj = (Object)floorswitch.Box.Data;
-				obj.Name = SpriteSheetRectName.ButtonPressed_E;
+				obj.TileType = SpriteSheetRectName.ButtonPressed_E;
 				obj.Activate();
 				lastSteppedFloorWitch = obj;
 			}
 			else {
 				if (lastSteppedFloorWitch != null) {
-					lastSteppedFloorWitch.Name = SpriteSheetRectName.Button_E;
+					lastSteppedFloorWitch.TileType = SpriteSheetRectName.Button_E;
 					lastSteppedFloorWitch.Deactivate();
 					lastSteppedFloorWitch = null;
 				}
@@ -76,7 +76,7 @@ namespace TimeIsUp {
 		public void Draw(SpriteBatch spriteBatch, GameTime gameTime, float depth) {
 			var dos = 0.5f - ((Object.Position.X + Object.Position.Y + Object.Position.Z) / MainPlayScreen.maxdepth) - 0.001f;
 			VT2 IsoPos = Object.Position.WorldToIso();
-			spriteBatch.Draw(spritesheet, IsoPos, MainPlayScreen.spriterects[Object.Name], Color.White, 0f, Object.Origin, Constant.SCALE, SpriteEffects.None, dos);
+			spriteBatch.Draw(spritesheet, IsoPos, MainPlayScreen.spriterects[Object.TileType], Color.White, 0f, Object.Origin, Constant.SCALE, SpriteEffects.None, dos);
 			//spriteBatch.DrawString(MainPlayScreen.font, dos.ToString() + Environment.NewLine + Object.Position.ToString(), IsoPos, Color.Black);
 		}
 	}
