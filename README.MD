@@ -9,3 +9,4 @@ This project use:
 - [Kenney's Isometric pack](https://kenney.nl/) for sprite
 - [Monogame_Utilities](https://github.com/Kahdeg-15520487/Monogame_Utilities) for boilerplate code
 - [Monogame](https://github.com/MonoGame/MonoGame) for the awesome game framework :heart:
+- [Tiled](https://github.com/bjorn/tiled) for the awesome tilemap editor
