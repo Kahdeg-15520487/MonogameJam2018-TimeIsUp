@@ -19,6 +19,10 @@ namespace TimeIsUp {
 			return new Microsoft.Xna.Framework.Vector2(vector2.X, vector2.Y);
 		}
 
+		public static Microsoft.Xna.Framework.Vector2 ToVector2(this Microsoft.Xna.Framework.Vector3 vector3) {
+			return new Microsoft.Xna.Framework.Vector2(vector3.X, vector3.Y);
+		}
+
 		public static Microsoft.Xna.Framework.Vector2 WorldToIso(this Microsoft.Xna.Framework.Vector2 world) {
 			var x = (world.X - world.Y) * Constant.TILE_WIDTH_HALF;
 			var y = (world.X + world.Y) * Constant.TILE_HEIGHT_HALF;
@@ -94,6 +98,30 @@ namespace TimeIsUp {
 			return new Microsoft.Xna.Framework.Vector2(A.X / distance, A.Y / distance);
 		}
 
+		public static bool IsOn(this SpriteSheetRectName swt) {
+			switch (swt) {
+				case SpriteSheetRectName.WallSwitchOn_E:
+				case SpriteSheetRectName.WallSwitchOn_S:
+				case SpriteSheetRectName.WallSwitchOn_W:
+				case SpriteSheetRectName.WallSwitchOn_N:
+					return true;
+				default:
+					return false;
+			}
+		}
+
+		public static bool IsOff(this SpriteSheetRectName swt) {
+			switch (swt) {
+				case SpriteSheetRectName.WallSwitchOff_E:
+				case SpriteSheetRectName.WallSwitchOff_S:
+				case SpriteSheetRectName.WallSwitchOff_W:
+				case SpriteSheetRectName.WallSwitchOff_N:
+					return true;
+				default:
+					return false;
+			}
+		}
+
 		public static SpriteSheetRectName FlipSwitch(this SpriteSheetRectName swt) {
 			switch (swt) {
 				case SpriteSheetRectName.WallSwitchOff_E:
@@ -115,6 +143,30 @@ namespace TimeIsUp {
 					return SpriteSheetRectName.WallSwitchOff_N;
 			}
 			return swt;
+		}
+
+		public static bool IsOpen(this SpriteSheetRectName door) {
+			switch (door) {
+				case SpriteSheetRectName.WallDoorOpen_E:
+				case SpriteSheetRectName.WallDoorOpen_S:
+				case SpriteSheetRectName.WallDoorOpen_W:
+				case SpriteSheetRectName.WallDoorOpen_N:
+					return true;
+				default:
+					return false;
+			}
+		}
+
+		public static bool IsClose(this SpriteSheetRectName door) {
+			switch (door) {
+				case SpriteSheetRectName.WallDoorClosed_E:
+				case SpriteSheetRectName.WallDoorClosed_S:
+				case SpriteSheetRectName.WallDoorClosed_W:
+				case SpriteSheetRectName.WallDoorClosed_N:
+					return true;
+				default:
+					return false;
+			}
 		}
 
 		public static SpriteSheetRectName OpenDoor(this SpriteSheetRectName door) {

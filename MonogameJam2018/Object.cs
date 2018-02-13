@@ -5,13 +5,15 @@ using Microsoft.Xna.Framework;
 namespace TimeIsUp {
 	internal class Object {
 		public string Name { get; set; }
-		public Vector3 Position { get; set; }
-		public Vector2 Origin { get; set; }
+		public Vector3 WorldPos { get; set; }
+		public Vector2 SpriteOrigin { get; set; }
 		public SpriteSheetRectName TileType { get; set; }
 		public Humper.Base.RectangleF BoundingBox { get; set; }
 		public IBox CollsionBox { get; set; }
 		public CollisionTag CollisionTag { get; set; }
 		public Action Activate { get; set; }
 		public Action Deactivate { get; set; }
+		public string Target { get; set; }
+		public string Action { get; set; }
 	}
 }

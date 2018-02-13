@@ -28,13 +28,13 @@ namespace TimeIsUp {
 		public VT2 Velocity;
 		private Object lastSteppedFloorWitch;
 
-		public void LoadContent() {
+		public void LoadContent(MainPlayScreen screen) {
 			spritesheet = MainPlayScreen.spritesheet;
 		}
 
 		public void Update(GameTime gameTime, KeyboardState currentKeyboardState, KeyboardState lastKeyboardState) {
 			var delta = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-			Velocity *= 0.2f;
+			Velocity *= 0.1f;
 			var move = CollisionBox.Move(CollisionBox.X + delta * Velocity.X, CollisionBox.Y + delta * Velocity.Y, x => {
 				if (x.Other.HasTag(CollisionTag.FloorSwitch)) {
 					return CollisionResponses.Cross;
@@ -70,13 +70,13 @@ namespace TimeIsUp {
 				}
 			}
 
-			Object.Position = new Vector3(WorldPos.X, WorldPos.Y, 0);
+			Object.WorldPos = new Vector3(WorldPos.X, WorldPos.Y, 0);
 		}
 
 		public void Draw(SpriteBatch spriteBatch, GameTime gameTime, float depth) {
-			var dos = 0.5f - ((Object.Position.X + Object.Position.Y + Object.Position.Z) / MainPlayScreen.maxdepth) - 0.001f;
-			VT2 IsoPos = Object.Position.WorldToIso();
-			spriteBatch.Draw(spritesheet, IsoPos, MainPlayScreen.spriterects[Object.TileType], Color.White, 0f, Object.Origin, Constant.SCALE, SpriteEffects.None, dos);
+			var dos = 0.5f - ((Object.WorldPos.X + Object.WorldPos.Y + Object.WorldPos.Z) / MainPlayScreen.maxdepth) - 0.001f;
+			VT2 IsoPos = Object.WorldPos.WorldToIso();
+			spriteBatch.Draw(spritesheet, IsoPos, MainPlayScreen.spriterects[Object.TileType], Color.White, 0f, Object.SpriteOrigin, Constant.SCALE, SpriteEffects.None, dos);
 			//spriteBatch.DrawString(MainPlayScreen.font, dos.ToString() + Environment.NewLine + Object.Position.ToString(), IsoPos, Color.Black);
 		}
 	}

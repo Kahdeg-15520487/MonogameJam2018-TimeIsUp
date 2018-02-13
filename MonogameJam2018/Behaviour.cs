@@ -8,6 +8,9 @@ namespace TimeIsUp {
 	static class Behaviour {
 		internal static Action OpenDoor(Object door) {
 			return () => {
+				if (door.TileType.IsOpen()) {
+					return;
+				}
 				door.TileType = door.TileType.OpenDoor();
 				door.CollsionBox.RemoveTags(CollisionTag.DoorClosed);
 				door.CollsionBox.AddTags(CollisionTag.DoorOpened);
@@ -15,6 +18,9 @@ namespace TimeIsUp {
 		}
 		internal static Action CloseDoor(Object door) {
 			return () => {
+				if (door.TileType.IsClose()) {
+					return;
+				}
 				door.TileType = door.TileType.CloseDoor();
 				door.CollsionBox.RemoveTags(CollisionTag.DoorOpened);
 				door.CollsionBox.AddTags(CollisionTag.DoorClosed);

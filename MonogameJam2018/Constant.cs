@@ -44,6 +44,8 @@ namespace TimeIsUp {
 
 		Ladder = 1024,     //bring player's z to this ladder's next level's z. z is height
 
-		Slab = 2048       //bring player's z to this slab'z when enter. z is height
+		Slab = 2048,       //bring player's z to this slab'z when enter. z is height
+
+		EndPoint = 4096		//if the player touch this, the player win aka cleared the level
 	}
 }

@@ -13,94 +13,97 @@ using Utility.Storage;
 namespace TimeIsUp {
 	class MapLoader {
 		public static Map LoadMap(string mapname) {
-			var mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".txt");
-			if (File.Exists(mappath)) {
-				//load txt map
-				var mapdata = CompressHelper.UnZip(File.ReadAllText(mappath));
-				return JsonConvert.DeserializeObject<Map>(mapdata);
+			var mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".tmx");
+			var map = new TmxMap(mappath);
+
+			var mapwidth = map.Width;
+			var mapheight = map.Height;
+			SpriteSheetRectName[,] f;
+			SpriteSheetRectName[,] w;
+			List<Object> o = new List<Object>();
+
+			f = HelperMethod.Make2DArray(map.Layers["floor"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
+			w = HelperMethod.Make2DArray(map.Layers["wall"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
+			var objects = map.ObjectGroups["object"].Objects;
+
+			var collision = new List<Humper.Base.RectangleF>();
+			int holecount = 0;
+			for (int y = 0; y < mapheight; y++) {
+				for (int x = 0; x < mapwidth; x++) {
+					if (f[y, x] == SpriteSheetRectName.None) {
+						var obj = new Object() {
+							Name = "hole" + holecount,
+							WorldPos = new Vector3(x, y, 0),
+							SpriteOrigin = Constant.SPRITE_ORIGIN,
+							TileType = SpriteSheetRectName.None,
+							BoundingBox = new Humper.Base.RectangleF(x - 0.3f, y - 0.3f, 1, 1),
+							CollisionTag = CollisionTag.Hole
+						};
+						o.Add(obj);
+					}
+
+					if (w[y, x].GetCollisionTag() != CollisionTag.None) {
+						collision.Add(GetCollsionBox(new Vector2(x, y), w[y, x]));
+					}
+				}
 			}
-			else {
-				//process tmx map and spit out txt map
-				mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".tmx");
-				var map = new TmxMap(mappath);
-
-				var mapwidth = map.Width;
-				var mapheight = map.Height;
-				SpriteSheetRectName[,] f = new SpriteSheetRectName[mapheight, mapwidth];
-				SpriteSheetRectName[,] w = new SpriteSheetRectName[mapheight, mapwidth];
-				List<Object> o = new List<Object>();
-
-				f = HelperMethod.Make2DArray(map.Layers["floor"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
-				w = HelperMethod.Make2DArray(map.Layers["wall"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
-				//var objects = HelperMethod.Make2DArray(map.Layers["object"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
-				var objects = map.ObjectGroups["object"].Objects;
-
-				var collision = new List<Humper.Base.RectangleF>();
-
-				for (int y = 0; y < mapheight; y++) {
-					for (int x = 0; x < mapwidth; x++) {
-						if (f[y, x] == SpriteSheetRectName.None) {
-							collision.Add(new Humper.Base.RectangleF(x - 0.3f, y - 0.3f, 1, 1));
-						}
-
-						if (w[y, x].GetCollisionTag() != CollisionTag.None) {
-							collision.Add(GetCollsionBox(new Vector2(x, y), w[y, x]));
-						}
+			List<Object> interactableObj = new List<Object>();
+			foreach (var oo in objects) {
+				var objtiletype = (SpriteSheetRectName)(oo.Tile.Gid - 1);
+				var objname = oo.Name;
+				var x = (float)oo.X / map.TileHeight - 1;
+				var y = (float)oo.Y / map.TileHeight - 1;
+				if (objtiletype != SpriteSheetRectName.None) {
+					var obj = new Object() {
+						Name = objname,
+						WorldPos = new Vector3(x, y, 0),
+						SpriteOrigin = Constant.SPRITE_ORIGIN,
+						TileType = objtiletype
+					};
+					if (objtiletype.GetCollisionTag() != CollisionTag.None) {
+						obj.BoundingBox = GetCollsionBox(new Vector2(x, y), objtiletype);
+						obj.CollisionTag = objtiletype.GetCollisionTag();
+					}
+					if (objname == "endpoint") {
+						obj.BoundingBox = GetCollsionBox(new Vector2(x, y), objtiletype);
+						obj.CollisionTag = CollisionTag.EndPoint;
+					}
+					if (oo.Properties.ContainsKey("Target") && oo.Properties.ContainsKey("Action")) {
+						obj.Target = oo.Properties["Target"];
+						obj.Action = oo.Properties["Action"];
+						interactableObj.Add(obj);
+					}
+					else {
+						obj.Target = string.Empty;
+						o.Add(obj);
 					}
 				}
-				List<(string, string, Object)> interactableObj = new List<(string, string, Object)>();
-				foreach (var oo in objects) {
-					var objtiletype = (SpriteSheetRectName)(oo.Tile.Gid - 1);
-					var objname = oo.Name;
-					var x = (float)oo.X / map.TileHeight - 1;
-					var y = (float)oo.Y / map.TileHeight - 1;
-					if (objtiletype != SpriteSheetRectName.None) {
-						var obj = new Object() { Name = objname, Position = new Vector3(x, y, 0), Origin = Constant.SPRITE_ORIGIN, TileType = objtiletype };
-						if (objtiletype.GetCollisionTag() != CollisionTag.None) {
-							obj.BoundingBox = GetCollsionBox(new Vector2(x, y), objtiletype);
-							obj.CollisionTag = objtiletype.GetCollisionTag();
-						}
-						if (oo.Properties.ContainsKey("Target") && oo.Properties.ContainsKey("Action")) {
-							var target = oo.Properties["Target"];
-							var action = oo.Properties["Action"];
-							interactableObj.Add((target, action, obj));
-						}
-						else {
-							o.Add(obj);
-						}
-					}
-				}
-
-				collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, mapwidth, 0.3f));
-				collision.Add(new Humper.Base.RectangleF(mapwidth - 0.3f, 0 - 0.3f, 0.3f, map.Height));
-				collision.Add(new Humper.Base.RectangleF(0 - 0.3f, mapheight - 0.3f, mapwidth, 0.3f));
-
-				var processedMap = new Map(mapwidth, mapheight, 3, f, w, o, collision.ToArray());
-
-				foreach (var io in interactableObj) {
-					var obj = io.Item3;
-					switch (io.Item2) {
-						case "open":
-							obj.Activate = Behaviour.OpenDoor(processedMap.FindObject(io.Item1));
-							obj.Deactivate = Behaviour.CloseDoor(processedMap.FindObject(io.Item1));
-							break;
-						case "up":
-						case "down":
-							obj.Activate = Behaviour.NoAction();
-							obj.Deactivate = Behaviour.NoAction();
-							break;
-					}
-					processedMap.Objects.Add(obj);
-				}
-
-				//map border
-				//collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, 0.3f, map.Height));
-				//mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".txt");
-
-				//File.WriteAllText(mappath, CompressHelper.Zip(JsonConvert.SerializeObject(processedMap)));
-
-				return processedMap;
 			}
+
+			//map border
+			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, 0.3f, map.Height));
+			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, mapwidth, 0.3f));
+			collision.Add(new Humper.Base.RectangleF(mapwidth - 0.3f, 0 - 0.3f, 0.3f, map.Height));
+			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, mapheight - 0.3f, mapwidth, 0.3f));
+
+			var processedMap = new Map(mapwidth, mapheight, 3, f, w, o, collision.ToArray());
+
+			foreach (var obj in interactableObj) {
+				switch (obj.Action) {
+					case "open":
+						obj.Activate = Behaviour.OpenDoor(processedMap.FindObject(obj.Target));
+						obj.Deactivate = Behaviour.CloseDoor(processedMap.FindObject(obj.Target));
+						break;
+					case "up":
+					case "down":
+						obj.Activate = Behaviour.NoAction();
+						obj.Deactivate = Behaviour.NoAction();
+						break;
+				}
+				processedMap.Objects.Add(obj);
+			}
+			processedMap.FindAllInteractLink();
+			return processedMap;
 		}
 
 		private static Humper.Base.RectangleF GetCollsionBox(Vector2 pos, SpriteSheetRectName spriteSheetRectName) {
@@ -170,6 +173,10 @@ namespace TimeIsUp {
 				case CollisionTag.Slab:
 					break;
 				case CollisionTag.None:
+					result.X = pos.X - 0.3f;
+					result.Y = pos.Y - 0.3f;
+					result.Width = 1;
+					result.Height = 1;
 					break;
 			}
 

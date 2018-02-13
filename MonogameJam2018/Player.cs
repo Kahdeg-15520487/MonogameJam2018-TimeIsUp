@@ -19,12 +19,14 @@ namespace TimeIsUp {
 		AnimatedEntity animatedEntity;
 		SpriteFont font;
 		Map map;
+		MainPlayScreen screen;
 
 		Direction dir;
 
 		Object lastSteppedFloorWitch = null;
-		Object lastLever;
-		private Object lastLadder;
+		Object lastLever = null;
+		Object lastLadder = null;
+		Object lastHole = null;
 
 		public IBox CollisionBox { get; set; }
 		public VT2 WorldPos { get { return new VT2(CollisionBox.X, CollisionBox.Y); } }
@@ -38,8 +40,12 @@ namespace TimeIsUp {
 			}
 		}
 		public VT2 Velocity { get; set; } = VT2.Zero;
+		public float MovementSpeed { get; set; } = 0.07f;
 
-		public void LoadContent() {
+		public bool isFalling = false;
+
+		public void LoadContent(MainPlayScreen screen) {
+			this.screen = screen;
 			var animationSpriteSheet = CONTENT_MANAGER.Sprites["animation"];
 			font = MainPlayScreen.font;
 			var frames = JsonConvert.DeserializeObject<List<KeyValuePair<string, Rectangle>>>(File.ReadAllText(@"Content/spritesheet/animation.json"));
@@ -69,9 +75,13 @@ namespace TimeIsUp {
 
 		public void Update(GameTime gameTime, KeyboardState currentKeyboardState, KeyboardState lastKeyboardState) {
 
-			MovePlayer(currentKeyboardState, lastKeyboardState);
+			MovePlayer(currentKeyboardState, lastKeyboardState, gameTime);
 
 			Interact(currentKeyboardState, lastKeyboardState);
+
+			if (isFalling) {
+				Origin -= new VT2(0, 1f);
+			}
 
 			animatedEntity.Update(gameTime);
 		}
@@ -81,6 +91,12 @@ namespace TimeIsUp {
 			if (HelperMethod.IsKeyPress(Keys.E, currentKeyboardState, lastKeyboardState)) {
 				if (lastLever != null) {
 					lastLever.TileType = lastLever.TileType.FlipSwitch();
+					if (lastLever.TileType.IsOn()) {
+						lastLever.Activate();
+					}
+					else if (lastLever.TileType.IsOff()) {
+						lastLever.Deactivate();
+					}
 				}
 				if (lastLadder != null) {
 					//next level stuff
@@ -88,7 +104,8 @@ namespace TimeIsUp {
 			}
 		}
 
-		private void MovePlayer(KeyboardState currentKeyboardState, KeyboardState lastKeyboardState) {
+		private void MovePlayer(KeyboardState currentKeyboardState, KeyboardState lastKeyboardState, GameTime gameTime) {
+			var delta = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
 			var curpos = new VT2(CollisionBox.X, CollisionBox.Y);
 			var direction = Direction.none;
 
@@ -107,28 +124,28 @@ namespace TimeIsUp {
 
 			switch (direction) {
 				case Direction.up:
-					Velocity = new VT2(0, -0.05f);
+					Velocity = new VT2(0, -MovementSpeed);
 					dir = direction;
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_up.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_up.ToString());
 					}
 					break;
 				case Direction.down:
-					Velocity = new VT2(0, 0.05f);
+					Velocity = new VT2(0, MovementSpeed);
 					dir = direction;
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_down.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_down.ToString());
 					}
 					break;
 				case Direction.right:
-					Velocity = new VT2(0.05f, 0);
+					Velocity = new VT2(MovementSpeed, 0);
 					dir = direction;
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_right.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_right.ToString());
 					}
 					break;
 				case Direction.left:
-					Velocity = new VT2(-0.05f, 0);
+					Velocity = new VT2(-MovementSpeed, 0);
 					dir = direction;
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_left.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_left.ToString());
@@ -142,7 +159,18 @@ namespace TimeIsUp {
 					break;
 			}
 
+			if (isFalling) {
+				//Velocity = VT2.Zero;
+				Velocity = (lastHole.WorldPos.ToVector2() - WorldPos);
+			}
+
 			var move = CollisionBox.Move(curpos.X + Velocity.X, curpos.Y + Velocity.Y, x => {
+
+				if (x.Other.HasTag(CollisionTag.Hole)) {
+					isFalling = true;
+					lastHole = (Object)x.Other.Data;
+					return CollisionResponses.Cross;
+				}
 
 				if (x.Other.HasTag(CollisionTag.FloorSwitch)) {
 					return CollisionResponses.Cross;
@@ -157,6 +185,11 @@ namespace TimeIsUp {
 				}
 
 				if (x.Other.HasTag(CollisionTag.Ladder)) {
+					return CollisionResponses.Cross;
+				}
+
+				if (x.Other.HasTag(CollisionTag.EndPoint)) {
+					screen.Win();
 					return CollisionResponses.Cross;
 				}
 
@@ -216,8 +249,8 @@ namespace TimeIsUp {
 		}
 
 		public void Draw(SpriteBatch spriteBatch, GameTime gameTime, float depth) {
-			//spriteBatch.DrawString(font, depth.ToString() + Environment.NewLine + WorldPos.ToString(), IsoPos, Color.Black);
-			animatedEntity.Draw(spriteBatch, gameTime, depth);
+			spriteBatch.DrawString(font, WorldPos.ToString(), IsoPos, Color.Black);
+			animatedEntity.Draw(spriteBatch, gameTime, isFalling ? 1f : depth);
 		}
 	}
 }
