@@ -205,8 +205,6 @@ namespace TimeIsUp.GameScreens {
 					for (int i = 0; i < MovableObjects.Count; i++) {
 						MovableObjects[i].Update(gameTime, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState);
 					}
-
-					camera.Centre = player.IsoPos;
 					break;
 				case GameState.Endgame:
 					if (msgboxButtonPressed) {
@@ -217,6 +215,8 @@ namespace TimeIsUp.GameScreens {
 				default:
 					break;
 			}
+
+			camera.Centre = player.IsoPos;
 
 			canvas.Update(gameTime, CONTENT_MANAGER.CurrentInputState, CONTENT_MANAGER.LastInputState);
 		}

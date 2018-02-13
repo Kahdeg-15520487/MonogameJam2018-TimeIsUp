@@ -26,7 +26,7 @@ namespace TimeIsUp {
 		public VT2 WorldPos => new VT2(CollisionBox.X, CollisionBox.Y);
 
 		public VT2 Velocity;
-		private Object lastSteppedFloorWitch;
+		private Object lastSteppedFloorSwitch;
 
 		public void LoadContent(MainPlayScreen screen) {
 			spritesheet = MainPlayScreen.spritesheet;
@@ -55,14 +55,14 @@ namespace TimeIsUp {
 			if (floorswitch != null) {
 				Object obj = (Object)floorswitch.Box.Data;
 				obj.TileType = SpriteSheetRectName.ButtonPressed_E;
-				obj.Activate();
-				lastSteppedFloorWitch = obj;
+				obj.Activate(obj);
+				lastSteppedFloorSwitch = obj;
 			}
 			else {
-				if (lastSteppedFloorWitch != null) {
-					lastSteppedFloorWitch.TileType = SpriteSheetRectName.Button_E;
-					lastSteppedFloorWitch.Deactivate();
-					lastSteppedFloorWitch = null;
+				if (lastSteppedFloorSwitch != null) {
+					lastSteppedFloorSwitch.TileType = SpriteSheetRectName.Button_E;
+					lastSteppedFloorSwitch.Deactivate(lastSteppedFloorSwitch);
+					lastSteppedFloorSwitch = null;
 				}
 			}
 

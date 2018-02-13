@@ -59,19 +59,15 @@ namespace TimeIsUp {
 						WorldPos = new Vector3(x, y, 0),
 						SpriteOrigin = Constant.SPRITE_ORIGIN,
 						TileType = objtiletype,
-						Activate = Behaviour.NoAction(),
+						Activate = BehaviourHelper.NoAction(),
 						OnActivate = string.Empty,
-						Deactivate = Behaviour.NoAction(),
+						Deactivate = BehaviourHelper.NoAction(),
 						OnDeactivate = string.Empty
 					};
 					if (objtiletype.GetCollisionTag() != CollisionTag.None) {
 						obj.BoundingBox = GetCollsionBox(new Vector2(x, y), objtiletype);
 						obj.CollisionTag = objtiletype.GetCollisionTag();
 					}
-					//if (objname == "endpoint") {
-					//	obj.BoundingBox = GetCollsionBox(new Vector2(x, y), objtiletype);
-					//	obj.CollisionTag = CollisionTag.EndPoint;
-					//}
 
 					bool isObjInteractable = false;
 					if (oo.Properties.ContainsKey("OnActivate")) {
@@ -115,15 +111,15 @@ namespace TimeIsUp {
 			return processedMap;
 		}
 
-		private static Action BehaviourParser(Map context,string behaviour) {
+		private static Behaviour BehaviourParser(Map context,string behaviour) {
 			var actions = behaviour.Split(';');
 			if (actions.Length == 1) {
 				//single action
-				return Behaviour.Parse(context, actions[0]);
+				return BehaviourHelper.Parse(context, actions[0]);
 			}
 			else {
 				//chained actionss
-				return Behaviour.Parse(context, actions);
+				return BehaviourHelper.Parse(context, actions);
 			}
 		}
 

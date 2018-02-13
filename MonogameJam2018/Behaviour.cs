@@ -5,9 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace TimeIsUp {
-	static class Behaviour {
-		internal static Action Parse(Map context, string[] actions) {
-			List<Action> parsedActions = new List<Action>();
+	internal delegate void Behaviour(Object activator);
+	static class BehaviourHelper {
+		internal static Behaviour Parse(Map context, string[] actions) {
+			List<Behaviour> parsedActions = new List<Behaviour>();
 
 			foreach (var action in actions) {
 				parsedActions.Add(Parse(context, action));
@@ -16,7 +17,7 @@ namespace TimeIsUp {
 			return RunAction(parsedActions.ToArray());
 		}
 
-		internal static Action Parse(Map context, string action) {
+		internal static Behaviour Parse(Map context, string action) {
 			var temp = action.Split();
 			var verb = temp[0];
 			var target = temp[1];
@@ -40,8 +41,8 @@ namespace TimeIsUp {
 			}
 		}
 
-		internal static Action OpenDoor(Object door) {
-			return () => {
+		internal static Behaviour OpenDoor(Object door) {
+			return (activator) => {
 				if (door.TileType.IsOpen()) {
 					return;
 				}
@@ -51,8 +52,8 @@ namespace TimeIsUp {
 			};
 		}
 
-		internal static Action CloseDoor(Object door) {
-			return () => {
+		internal static Behaviour CloseDoor(Object door) {
+			return (activator) => {
 				if (door.TileType.IsClose()) {
 					return;
 				}
@@ -62,32 +63,42 @@ namespace TimeIsUp {
 			};
 		}
 
-		internal static Action RunAction(params Action[] actions) {
-			return () => {
+		internal static Behaviour RunAction(params Behaviour[] actions) {
+			return (activator) => {
 				foreach (var action in actions) {
-					action();
+					action(activator);
 				}
 			};
 		}
 
-		internal static Action NoAction() {
-			return () => { };
+		internal static Behaviour NoAction() {
+			return (activator) => { };
 		}
 
-		internal static Action ExtendPistol(Object pistol) {
-			return () => { };
+		internal static Behaviour ExtendPistol(Object pistol) {
+			return (activator) => { };
 		}
 
-		internal static Action RetractPistol(Object pistol) {
-			return () => { };
+		internal static Behaviour RetractPistol(Object pistol) {
+			return (activator) => { };
 		}
 
-		internal static Action TurnLightOn(Object light) {
-			return () => { };
+		internal static Behaviour TurnLightOn(Object light) {
+			return (activator) => {
+				if (light.TileType.IsOn()) {
+					return;
+				}
+				light.TileType = light.TileType.TurnLightOn();
+			};
 		}
 
-		internal static Action TurnLightOff(Object light) {
-			return () => { };
+		internal static Behaviour TurnLightOff(Object light) {
+			return (activator) => {
+				if (light.TileType.IsOff()) {
+					return;
+				}
+				light.TileType = light.TileType.TurnLightOff();
+			};
 		}
 	}
 }

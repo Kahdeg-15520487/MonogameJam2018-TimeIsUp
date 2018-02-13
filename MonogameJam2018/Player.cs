@@ -92,10 +92,10 @@ namespace TimeIsUp {
 				if (lastLever != null) {
 					lastLever.TileType = lastLever.TileType.FlipSwitch();
 					if (lastLever.TileType.IsOn()) {
-						lastLever.Activate();
+						lastLever.Activate(lastLever);
 					}
 					else if (lastLever.TileType.IsOff()) {
-						lastLever.Deactivate();
+						lastLever.Deactivate(lastLever);
 					}
 				}
 				if (lastLadder != null) {
@@ -200,13 +200,13 @@ namespace TimeIsUp {
 			if (floorswitch != null) {
 				Object obj = (Object)floorswitch.Box.Data;
 				obj.TileType = SpriteSheetRectName.ButtonPressed_E;
-				obj.Activate();
+				obj.Activate(obj);
 				lastSteppedFloorWitch = obj;
 			}
 			else {
 				if (lastSteppedFloorWitch != null) {
 					lastSteppedFloorWitch.TileType = SpriteSheetRectName.Button_E;
-					lastSteppedFloorWitch.Deactivate();
+					lastSteppedFloorWitch.Deactivate(lastSteppedFloorWitch);
 					lastSteppedFloorWitch = null;
 				}
 			}

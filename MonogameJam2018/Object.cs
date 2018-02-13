@@ -11,8 +11,8 @@ namespace TimeIsUp {
 		public Humper.Base.RectangleF BoundingBox { get; set; }
 		public IBox CollsionBox { get; set; }
 		public CollisionTag CollisionTag { get; set; }
-		public Action Activate { get; set; }
-		public Action Deactivate { get; set; }
+		public Behaviour Activate { get; set; }
+		public Behaviour Deactivate { get; set; }
 		public string OnActivate { get; set; }
 		public string OnDeactivate { get; set; }
 	}
