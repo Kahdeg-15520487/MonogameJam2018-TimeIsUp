@@ -68,7 +68,7 @@ namespace TimeIsUp {
 				for (int x = 0; x < Width; x++) {
 					//var dos = 0.7f - (((x * Constant.TILE_WIDTH_HALF) + (y * Constant.TILE_HEIGHT_HALF)) / maxdepth);
 					var z = 0;
-					var dos = 0.5f - ((x + y + z) / maxdepth);
+					var dos = 0.7f - ((x + y + z) / maxdepth);
 					Vector2 IsoPos = (x, y, z).WorldToIso();
 					if (Floors[y, x] != SpriteSheetRectName.None) {
 						spriteBatch.Draw(spritesheet, IsoPos, spriterects[Floors[y, x]], Color.White, 0f, spriteOrigin, Constant.SCALE, SpriteEffects.None, 0.9f);
@@ -82,7 +82,7 @@ namespace TimeIsUp {
 			foreach (var obj in Objects) {
 				//var dos = 0.7f - (((obj.Position.X * Constant.TILE_WIDTH_HALF) + (obj.Position.Y * Constant.TILE_HEIGHT_HALF)) / maxdepth);
 				//var dos = 0.7f - (((obj.Position.X) + (obj.Position.Y)) / maxdepth);
-				var dos = 0.5f - ((obj.WorldPos.X + obj.WorldPos.Y + obj.WorldPos.Z) / maxdepth) - 0.001f;
+				var dos = 0.7f - ((obj.WorldPos.X + obj.WorldPos.Y + obj.WorldPos.Z) / maxdepth) - 0.001f;
 				Vector2 IsoPos = obj.WorldPos.WorldToIso();
 				if (obj.TileType != SpriteSheetRectName.None) {
 					spriteBatch.Draw(spritesheet, IsoPos, spriterects[obj.TileType], Color.White, 0f, obj.SpriteOrigin, Constant.SCALE, SpriteEffects.None, dos);

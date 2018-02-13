@@ -178,6 +178,12 @@ namespace TimeIsUp {
 					result.Width = 1;
 					result.Height = 1;
 					break;
+				case CollisionTag.EndPoint:
+					result.X = pos.X - 0.3f;
+					result.Y = pos.Y - 0.3f;
+					result.Width = 1;
+					result.Height = 1;
+					break;
 			}
 
 			return result;

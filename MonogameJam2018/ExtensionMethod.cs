@@ -315,9 +315,12 @@ namespace TimeIsUp {
 
 				case SpriteSheetRectName.SlabQuarter_E:
 				case SpriteSheetRectName.SlabQuarter_N:
-				case SpriteSheetRectName.SlabQuarter_S:
 				case SpriteSheetRectName.SlabQuarter_W:
 					result = CollisionTag.Slab;
+					break;
+
+				case SpriteSheetRectName.SlabQuarter_S:
+					result = CollisionTag.EndPoint;
 					break;
 
 				case SpriteSheetRectName.StepsLarge_E:

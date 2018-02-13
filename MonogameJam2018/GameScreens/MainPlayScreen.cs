@@ -17,6 +17,16 @@ using Microsoft.Xna.Framework.Input;
 
 namespace TimeIsUp.GameScreens {
 	class MainPlayScreen : Screen {
+
+		enum GameState {
+			None,
+			Ready,
+			Ingame,
+			Endgame
+		}
+
+		GameState gameState = GameState.None;
+
 		DrawBatch drawBatch;
 		Canvas canvas;
 		Camera camera;
@@ -25,6 +35,10 @@ namespace TimeIsUp.GameScreens {
 		World world;
 		List<IMovableObject> MovableObjects;
 		Player player;
+		Timer timer;
+		Label label_timer;
+
+		MessageBox msgbox;
 
 		bool isWin;
 		bool isDrawCollisionBox = false;
@@ -37,18 +51,51 @@ namespace TimeIsUp.GameScreens {
 
 		private Vector2 spawnpoint;
 		private Vector2 endpoint;
+		private bool msgboxButtonPressed;
 
 		public MainPlayScreen(GraphicsDevice device) : base(device, "MainPlayScreen") { }
 
 		public override bool Init() {
 			drawBatch = new DrawBatch(device);
 			camera = new Camera(device.Viewport);
+			timer = new Timer();
 
 			spritesheet = CONTENT_MANAGER.Sprites["spritesheet"];
 			font = CONTENT_MANAGER.Fonts["default"];
 
 			var temp = File.ReadAllText(@"Content/spritesheet/spritesheet.json");
 			spriterects = JsonConvert.DeserializeObject<List<KeyValuePair<string, Rectangle>>>(temp).ToDictionary(kvp => kvp.Key.ToEnum<SpriteSheetRectName>(), kvp => kvp.Value);
+
+			InitGame();
+
+			InitUI();
+
+			return base.Init();
+		}
+
+		public void InitUI() {
+			canvas = new Canvas();
+			msgbox = new MessageBox(new Point(300, 200), "text", "OK");
+			msgbox.ButtonPressed += (o, e) => {
+				msgboxButtonPressed = true;
+			};
+			label_timer = new Label("", new Point(10, 10), new Vector2(50, 30), font) {
+				Origin = new Vector2(0, -20)
+			};
+			canvas.AddElement("msgbox", msgbox);
+			canvas.AddElement("label_timer", label_timer);
+		}
+
+		public override void Shutdown() {
+			base.Shutdown();
+		}
+
+		internal void Win() {
+			isWin = true;
+		}
+
+		private void InitGame() {
+			timer.Reset();
 
 			map = MapLoader.LoadMap("lvl1"); // new TmxMap(Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", "test.tmx"));
 			maxdepth = ((map.Width + 1) + (map.Height + 1) + (map.Depth + 1)) * 10;
@@ -90,6 +137,8 @@ namespace TimeIsUp.GameScreens {
 			var sp = map.FindObject("spawnpoint");
 			if (sp != null) {
 				spawnpoint = new Vector2(sp.WorldPos.X, sp.WorldPos.Y);
+				world.Remove(sp.CollsionBox);
+				MarkedForRemove.Add(sp);
 			}
 
 			var ep = map.FindObject("endpoint");
@@ -111,48 +160,64 @@ namespace TimeIsUp.GameScreens {
 			player.LoadContent(this);
 			player.Origin = new Vector2(128, 512);
 			MovableObjects.Add(player);
-
-			InitUI();
-
-			return base.Init();
-		}
-
-		public void InitUI() {
-			canvas = new Canvas();
-		}
-
-		public override void Shutdown() {
-			base.Shutdown();
-		}
-
-		internal void Win() {
-			isWin = true;
 		}
 
 		public override void Update(GameTime gameTime) {
 
-			if (isWin) {
-				//goto screen victory
-			}
+			switch (gameState) {
+				case GameState.None:
+					gameState = GameState.Ready;
+					InitGame();
+					msgbox.Show("Ready?", "Go");
+					break;
+				case GameState.Ready:
+					if (msgboxButtonPressed) {
+						msgboxButtonPressed = false;
+						gameState = GameState.Ingame;
+						msgbox.Hide();
+						timer.Start();
+					}
+					break;
+				case GameState.Ingame:
+					if (isWin) {
+						gameState = GameState.Endgame;
+						timer.Stop();
+						msgbox.Show("You finished the level in:" + Environment.NewLine + timer.ElapsedTime + " s" + Environment.NewLine + "Restart?", "OK");
+					}
 
-			if (HelperMethod.IsKeyPress(Keys.P, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
-				Init();
-			}
+					timer.Update(gameTime);
 
-			if (HelperMethod.IsKeyPress(Keys.L, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
-				isDrawCollisionBox = !isDrawCollisionBox;
-			}
+					if (HelperMethod.IsKeyPress(Keys.P, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
+						gameState = GameState.None;
+					}
 
-			if (HelperMethod.IsKeyPress(Keys.O, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
-				isDrawInteractLink = !isDrawInteractLink;
+					if (HelperMethod.IsKeyPress(Keys.L, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
+						isDrawCollisionBox = !isDrawCollisionBox;
+					}
+
+					if (HelperMethod.IsKeyPress(Keys.O, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
+						isDrawInteractLink = !isDrawInteractLink;
+					}
+
+					label_timer.Text = timer.ElapsedTime.ToString();
+
+					for (int i = 0; i < MovableObjects.Count; i++) {
+						MovableObjects[i].Update(gameTime, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState);
+					}
+
+					camera.Centre = player.IsoPos;
+					break;
+				case GameState.Endgame:
+					if (msgboxButtonPressed) {
+						msgboxButtonPressed = false;
+						gameState = GameState.None;
+					}
+					break;
+				default:
+					break;
 			}
 
 			canvas.Update(gameTime, CONTENT_MANAGER.CurrentInputState, CONTENT_MANAGER.LastInputState);
-			//player.Update(gameTime, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState);
-			for (int i = 0; i < MovableObjects.Count; i++) {
-				MovableObjects[i].Update(gameTime, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState);
-			}
-			MoveCamera(CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState);
 		}
 
 		private void MoveCamera(KeyboardState currentKeyboardState, KeyboardState lastKeyboardState) {
@@ -189,7 +254,7 @@ namespace TimeIsUp.GameScreens {
 
 			map.Draw(spriteBatch, gameTime);
 
-			var depthoffset = 0.5f - ((player.WorldPos.X + player.WorldPos.Y) / maxdepth) - 0.002f;
+			var depthoffset = 0.7f - ((player.WorldPos.X + player.WorldPos.Y) / maxdepth) - 0.002f;
 			MovableObjects.ForEach(x => x.Draw(spriteBatch, gameTime, depthoffset));
 			spriteBatch.EndSpriteBatch();
 
@@ -209,7 +274,7 @@ namespace TimeIsUp.GameScreens {
 				drawBatch.End();
 			}
 
-			spriteBatch.BeginSpriteBatch();
+			spriteBatch.BeginSpriteBatch(SpriteSortMode.FrontToBack);
 			canvas.Draw(spriteBatch, gameTime);
 			spriteBatch.EndSpriteBatch();
 		}

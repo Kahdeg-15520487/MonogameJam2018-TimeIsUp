@@ -39,6 +39,9 @@ namespace TimeIsUp {
 			CONTENT_MANAGER.spriteBatch = new SpriteBatch(GraphicsDevice);
 			CONTENT_MANAGER.gameInstance = this;
 			CONTENT_MANAGER.CurrentInputState = new InputState(Mouse.GetState(), Keyboard.GetState());
+
+			Primitive2DActionGenerator.CreateThePixel(CONTENT_MANAGER.spriteBatch);
+
 			base.Initialize();
 		}
 
