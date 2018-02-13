@@ -35,14 +35,14 @@ namespace TimeIsUp {
 
 		Lever = 64,     //when the player flip the lever, do something
 
-		Elevator = 128,   //when the player is standing on the elevator,
+		Portal = 128,   //when the player is standing on the elevator,
 						  //bring player's z to this stair'z. z is height
 
 		Hole = 256,     //make the player fall
 
-		Stair = 512,        //bring player's z to this stair's z. z is height
+		PistolFace = 512,        //bring player's z to this stair's z. z is height
 
-		Ladder = 1024,     //bring player's z to this ladder's next level's z. z is height
+		PistolBase = 1024,     //bring player's z to this ladder's next level's z. z is height
 
 		Slab = 2048,       //bring player's z to this slab'z when enter. z is height
 

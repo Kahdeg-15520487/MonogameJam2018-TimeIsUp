@@ -14,12 +14,12 @@ using Utility.ScreenManager;
 namespace TimeIsUp {
 	public class GameManager : Game {
 		GraphicsDeviceManager graphics;
-		internal static Map map;
 
 		public GameManager() {
-			graphics = new GraphicsDeviceManager(this);
-			graphics.PreferredBackBufferWidth = 800;
-			graphics.PreferredBackBufferHeight = 600;
+			graphics = new GraphicsDeviceManager(this) {
+				PreferredBackBufferWidth = 800,
+				PreferredBackBufferHeight = 600
+			};
 			graphics.ApplyChanges();
 
 			Content.RootDirectory = "Content";
@@ -31,6 +31,8 @@ namespace TimeIsUp {
 				settings.Converters.Add(new MapJsonConverter());
 				return settings;
 			};
+
+
 		}
 
 		protected override void Initialize() {
@@ -46,7 +48,12 @@ namespace TimeIsUp {
 		}
 
 		private void InitScreen() {
-			SCREEN_MANAGER.add_screen(new MainPlayScreen(GraphicsDevice));
+
+			var playscreen = new MainPlayScreen(GraphicsDevice) {
+				Mapname = CONTENT_MANAGER.MapName ?? "lvl1"
+			};
+
+			SCREEN_MANAGER.add_screen(playscreen);
 
 			SCREEN_MANAGER.goto_screen("MainPlayScreen");
 

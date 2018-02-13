@@ -1,4 +1,5 @@
 ﻿using System;
+using Utility;
 
 namespace TimeIsUp {
     /// <summary>
@@ -10,8 +11,9 @@ namespace TimeIsUp {
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+			CONTENT_MANAGER.ParseArguments(args);
             using (var game = new GameManager())
                 game.Run();
         }

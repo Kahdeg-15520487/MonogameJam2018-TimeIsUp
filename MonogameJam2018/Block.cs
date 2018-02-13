@@ -48,10 +48,6 @@ namespace TimeIsUp {
 					return CollisionResponses.Cross;
 				}
 
-				if (x.Other.HasTag(CollisionTag.Ladder)) {
-					return CollisionResponses.Cross;
-				}
-
 				return CollisionResponses.Slide;
 			});
 

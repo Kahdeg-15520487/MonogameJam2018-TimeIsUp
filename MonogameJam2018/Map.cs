@@ -35,12 +35,12 @@ namespace TimeIsUp {
 
 		public void FindAllInteractLink() {
 			InteractLink = new List<Line>();
-			foreach (var obj in Objects) {
-				if (!string.IsNullOrEmpty(obj.Target)) {
-					var target = FindObject(obj.Target);
-					InteractLink.Add(new Line(obj.WorldPos.ToVector2(), target.WorldPos.ToVector2()));
-				}
-			}
+			//foreach (var obj in Objects) {
+			//	if (!string.IsNullOrEmpty(obj.Target)) {
+			//		var target = FindObject(obj.Target);
+			//		InteractLink.Add(new Line(obj.WorldPos.ToVector2(), target.WorldPos.ToVector2()));
+			//	}
+			//}
 		}
 
 		public Object FindObject(SpriteSheetRectName obj) {

@@ -48,7 +48,7 @@ namespace TimeIsUp {
 			this.screen = screen;
 			var animationSpriteSheet = CONTENT_MANAGER.Sprites["animation"];
 			font = MainPlayScreen.font;
-			var frames = JsonConvert.DeserializeObject<List<KeyValuePair<string, Rectangle>>>(File.ReadAllText(@"Content/spritesheet/animation.json"));
+			var frames = JsonConvert.DeserializeObject<List<KeyValuePair<string, Rectangle>>>(File.ReadAllText(@"Content/sprite/animation.json"));
 			var anims = new List<Animation>();
 			var animnames = Enum.GetNames(typeof(AnimationName));
 			foreach (var an in animnames) {
@@ -184,10 +184,6 @@ namespace TimeIsUp {
 					return CollisionResponses.Cross;
 				}
 
-				if (x.Other.HasTag(CollisionTag.Ladder)) {
-					return CollisionResponses.Cross;
-				}
-
 				if (x.Other.HasTag(CollisionTag.EndPoint)) {
 					screen.Win();
 					return CollisionResponses.Cross;
@@ -223,17 +219,6 @@ namespace TimeIsUp {
 			else {
 				if (lastLever != null) {
 					lastLever = null;
-				}
-			}
-
-			var ladder = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.Ladder));
-			if (ladder != null) {
-				Object obj = (Object)ladder.Box.Data;
-				lastLadder = obj;
-			}
-			else {
-				if (lastLadder != null) {
-					lastLadder = null;
 				}
 			}
 

@@ -58,23 +58,35 @@ namespace TimeIsUp {
 						Name = objname,
 						WorldPos = new Vector3(x, y, 0),
 						SpriteOrigin = Constant.SPRITE_ORIGIN,
-						TileType = objtiletype
+						TileType = objtiletype,
+						Activate = Behaviour.NoAction(),
+						OnActivate = string.Empty,
+						Deactivate = Behaviour.NoAction(),
+						OnDeactivate = string.Empty
 					};
 					if (objtiletype.GetCollisionTag() != CollisionTag.None) {
 						obj.BoundingBox = GetCollsionBox(new Vector2(x, y), objtiletype);
 						obj.CollisionTag = objtiletype.GetCollisionTag();
 					}
-					if (objname == "endpoint") {
-						obj.BoundingBox = GetCollsionBox(new Vector2(x, y), objtiletype);
-						obj.CollisionTag = CollisionTag.EndPoint;
+					//if (objname == "endpoint") {
+					//	obj.BoundingBox = GetCollsionBox(new Vector2(x, y), objtiletype);
+					//	obj.CollisionTag = CollisionTag.EndPoint;
+					//}
+
+					bool isObjInteractable = false;
+					if (oo.Properties.ContainsKey("OnActivate")) {
+						obj.OnActivate = oo.Properties["OnActivate"];
+						isObjInteractable = true;
 					}
-					if (oo.Properties.ContainsKey("Target") && oo.Properties.ContainsKey("Action")) {
-						obj.Target = oo.Properties["Target"];
-						obj.Action = oo.Properties["Action"];
+					if (oo.Properties.ContainsKey("OnDeactivate")) {
+						obj.OnDeactivate = oo.Properties["OnDeactivate"];
+						isObjInteractable = true;
+					}
+
+					if (isObjInteractable) {
 						interactableObj.Add(obj);
 					}
 					else {
-						obj.Target = string.Empty;
 						o.Add(obj);
 					}
 				}
@@ -89,21 +101,30 @@ namespace TimeIsUp {
 			var processedMap = new Map(mapwidth, mapheight, 3, f, w, o, collision.ToArray());
 
 			foreach (var obj in interactableObj) {
-				switch (obj.Action) {
-					case "open":
-						obj.Activate = Behaviour.OpenDoor(processedMap.FindObject(obj.Target));
-						obj.Deactivate = Behaviour.CloseDoor(processedMap.FindObject(obj.Target));
-						break;
-					case "up":
-					case "down":
-						obj.Activate = Behaviour.NoAction();
-						obj.Deactivate = Behaviour.NoAction();
-						break;
+				if (!string.IsNullOrEmpty(obj.OnActivate)) {
+					obj.Activate = BehaviourParser(processedMap, obj.OnActivate);
 				}
+
+				if (!string.IsNullOrEmpty(obj.OnDeactivate)) {
+					obj.Deactivate = BehaviourParser(processedMap, obj.OnDeactivate);
+				}
+
 				processedMap.Objects.Add(obj);
 			}
 			processedMap.FindAllInteractLink();
 			return processedMap;
+		}
+
+		private static Action BehaviourParser(Map context,string behaviour) {
+			var actions = behaviour.Split(';');
+			if (actions.Length == 1) {
+				//single action
+				return Behaviour.Parse(context, actions[0]);
+			}
+			else {
+				//chained actionss
+				return Behaviour.Parse(context, actions);
+			}
 		}
 
 		private static Humper.Base.RectangleF GetCollsionBox(Vector2 pos, SpriteSheetRectName spriteSheetRectName) {
@@ -158,18 +179,6 @@ namespace TimeIsUp {
 					result.Height = 0.5f;
 					break;
 
-				case CollisionTag.Elevator:
-					break;
-				case CollisionTag.Hole:
-					break;
-				case CollisionTag.Stair:
-					break;
-				case CollisionTag.Ladder:
-					result.X = pos.X;
-					result.Y = pos.Y - 0.3f;
-					result.Width = 0.3f;
-					result.Height = 0.2f;
-					break;
 				case CollisionTag.Slab:
 					break;
 				case CollisionTag.None:

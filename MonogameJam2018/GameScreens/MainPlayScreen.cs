@@ -31,6 +31,7 @@ namespace TimeIsUp.GameScreens {
 		Canvas canvas;
 		Camera camera;
 		Map map;
+		public string Mapname { get; set; }
 		internal static float maxdepth;
 		World world;
 		List<IMovableObject> MovableObjects;
@@ -41,8 +42,8 @@ namespace TimeIsUp.GameScreens {
 		MessageBox msgbox;
 
 		bool isWin;
-		bool isDrawCollisionBox = false;
-		bool isDrawInteractLink = false;
+		bool isDrawCollisionBox = true;
+		bool isDrawInteractLink = true;
 
 		internal static Texture2D spritesheet;
 		internal static SpriteFont font;
@@ -63,41 +64,20 @@ namespace TimeIsUp.GameScreens {
 			spritesheet = CONTENT_MANAGER.Sprites["spritesheet"];
 			font = CONTENT_MANAGER.Fonts["default"];
 
-			var temp = File.ReadAllText(@"Content/spritesheet/spritesheet.json");
+			var temp = File.ReadAllText(@"Content/sprite/spritesheet.json");
 			spriterects = JsonConvert.DeserializeObject<List<KeyValuePair<string, Rectangle>>>(temp).ToDictionary(kvp => kvp.Key.ToEnum<SpriteSheetRectName>(), kvp => kvp.Value);
 
-			InitGame();
+			//InitGame();
 
 			InitUI();
 
 			return base.Init();
 		}
 
-		public void InitUI() {
-			canvas = new Canvas();
-			msgbox = new MessageBox(new Point(300, 200), "text", "OK");
-			msgbox.ButtonPressed += (o, e) => {
-				msgboxButtonPressed = true;
-			};
-			label_timer = new Label("", new Point(10, 10), new Vector2(50, 30), font) {
-				Origin = new Vector2(0, -20)
-			};
-			canvas.AddElement("msgbox", msgbox);
-			canvas.AddElement("label_timer", label_timer);
-		}
-
-		public override void Shutdown() {
-			base.Shutdown();
-		}
-
-		internal void Win() {
-			isWin = true;
-		}
-
 		private void InitGame() {
 			timer.Reset();
 
-			map = MapLoader.LoadMap("lvl1"); // new TmxMap(Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", "test.tmx"));
+			map = MapLoader.LoadMap(Mapname); // new TmxMap(Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", "test.tmx"));
 			maxdepth = ((map.Width + 1) + (map.Height + 1) + (map.Depth + 1)) * 10;
 			map.LoadContent();
 
@@ -160,6 +140,27 @@ namespace TimeIsUp.GameScreens {
 			player.LoadContent(this);
 			player.Origin = new Vector2(128, 512);
 			MovableObjects.Add(player);
+		}
+
+		public void InitUI() {
+			canvas = new Canvas();
+			msgbox = new MessageBox(new Point(300, 200), "text", "OK");
+			msgbox.ButtonPressed += (o, e) => {
+				msgboxButtonPressed = true;
+			};
+			label_timer = new Label("", new Point(10, 10), new Vector2(50, 30), font) {
+				Origin = new Vector2(0, -20)
+			};
+			canvas.AddElement("msgbox", msgbox);
+			canvas.AddElement("label_timer", label_timer);
+		}
+
+		public override void Shutdown() {
+			base.Shutdown();
+		}
+
+		internal void Win() {
+			isWin = true;
 		}
 
 		public override void Update(GameTime gameTime) {

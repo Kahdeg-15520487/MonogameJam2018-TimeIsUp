@@ -13,7 +13,7 @@ namespace TimeIsUp {
 		public CollisionTag CollisionTag { get; set; }
 		public Action Activate { get; set; }
 		public Action Deactivate { get; set; }
-		public string Target { get; set; }
-		public string Action { get; set; }
+		public string OnActivate { get; set; }
+		public string OnDeactivate { get; set; }
 	}
 }
