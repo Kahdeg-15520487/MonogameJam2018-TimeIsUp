@@ -54,7 +54,9 @@
     <Compile Include="ExtensionMethod.cs" />
     <Compile Include="GameManager.cs" />
     <Compile Include="GameScreens\MainPlayScreen.cs" />
+    <Compile Include="GameScreens\TransitionScreen.cs" />
     <Compile Include="IMovableObject.cs" />
+    <Compile Include="Line.cs" />
     <Compile Include="Map.cs" />
     <Compile Include="MapLoader.cs" />
     <Compile Include="Object.cs" />
