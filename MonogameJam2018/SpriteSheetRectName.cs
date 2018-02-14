@@ -1,5 +1,6 @@
 ﻿namespace TimeIsUp {
 	enum SpriteSheetRectName {
+		Popup = -2,
 		None = -1,
 		BlockHuge_E,
 		BlockLarge_E,

@@ -1,5 +1,9 @@
 ﻿using Microsoft.Xna.Framework.Input;
 using System;
+using System.Collections.Generic;
+using VT2 = Microsoft.Xna.Framework.Vector2;
+using rect = Microsoft.Xna.Framework.Rectangle;
+using Utility;
 
 namespace TimeIsUp {
 	static class ExtensionMethod {
@@ -7,81 +11,81 @@ namespace TimeIsUp {
 			return (T)Enum.Parse(typeof(T), value, true);
 		}
 
-		public static Microsoft.Xna.Framework.Rectangle ToRectangle(this Humper.Base.RectangleF rectangleF) {
-			return new Microsoft.Xna.Framework.Rectangle((int)rectangleF.X, (int)rectangleF.Y, (int)rectangleF.Width, (int)rectangleF.Height);
+		public static rect ToRectangle(this Humper.Base.RectangleF rectangleF) {
+			return new rect((int)rectangleF.X, (int)rectangleF.Y, (int)rectangleF.Width, (int)rectangleF.Height);
 		}
 
-		public static Humper.Base.Vector2 ToHumperVector2(this Microsoft.Xna.Framework.Vector2 vector2) {
+		public static Humper.Base.Vector2 ToHumperVector2(this VT2 vector2) {
 			return new Humper.Base.Vector2(vector2.X, vector2.Y);
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 ToMonogameVector2(this Humper.Base.Vector2 vector2) {
-			return new Microsoft.Xna.Framework.Vector2(vector2.X, vector2.Y);
+		public static VT2 ToMonogameVector2(this Humper.Base.Vector2 vector2) {
+			return new VT2(vector2.X, vector2.Y);
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 ToVector2(this Microsoft.Xna.Framework.Vector3 vector3) {
-			return new Microsoft.Xna.Framework.Vector2(vector3.X, vector3.Y);
+		public static VT2 ToVector2(this Microsoft.Xna.Framework.Vector3 vector3) {
+			return new VT2(vector3.X, vector3.Y);
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 WorldToIso(this Microsoft.Xna.Framework.Vector2 world) {
+		public static VT2 WorldToIso(this VT2 world) {
 			var x = (world.X - world.Y) * Constant.TILE_WIDTH_HALF;
 			var y = (world.X + world.Y) * Constant.TILE_HEIGHT_HALF;
-			return new Microsoft.Xna.Framework.Vector2(x, y);
+			return new VT2(x, y);
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 WorldToIso(this (float X, float Y) world) {
+		public static VT2 WorldToIso(this (float X, float Y) world) {
 			var x = (world.X - world.Y) * Constant.TILE_WIDTH_HALF;
 			var y = (world.X + world.Y) * Constant.TILE_HEIGHT_HALF;
-			return new Microsoft.Xna.Framework.Vector2(x, y);
+			return new VT2(x, y);
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 WorldToIso(this (int X, int Y) world) {
+		public static VT2 WorldToIso(this (int X, int Y) world) {
 			var x = (world.X - world.Y) * Constant.TILE_WIDTH_HALF;
 			var y = (world.X + world.Y) * Constant.TILE_HEIGHT_HALF;
-			return new Microsoft.Xna.Framework.Vector2(x, y);
+			return new VT2(x, y);
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 WorldToIso(this Microsoft.Xna.Framework.Vector3 world) {
+		public static VT2 WorldToIso(this Microsoft.Xna.Framework.Vector3 world) {
 			var u = (world.X - world.Y) * Constant.TILE_WIDTH_HALF;
 			var v = (world.X + 2 * world.Z + world.Y) * Constant.TILE_HEIGHT_HALF;
-			return new Microsoft.Xna.Framework.Vector2(u, v);
+			return new VT2(u, v);
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 WorldToIso(this (float X, float Y, float Z) world) {
+		public static VT2 WorldToIso(this (float X, float Y, float Z) world) {
 			var u = (world.X - world.Y) * Constant.TILE_WIDTH_HALF;
 			var v = (world.X + 2 * world.Z + world.Y) * Constant.TILE_HEIGHT_HALF;
-			return new Microsoft.Xna.Framework.Vector2(u, v);
+			return new VT2(u, v);
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 WorldToIso(this (int X, int Y, int Z) world) {
+		public static VT2 WorldToIso(this (int X, int Y, int Z) world) {
 			var u = (world.X - world.Y) * Constant.TILE_WIDTH_HALF;
 			var v = (world.X + 2 * world.Z + world.Y) * Constant.TILE_HEIGHT_HALF;
-			return new Microsoft.Xna.Framework.Vector2(u, v);
+			return new VT2(u, v);
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 IsoToWorld(this Microsoft.Xna.Framework.Vector2 iso) {
+		public static VT2 IsoToWorld(this VT2 iso) {
 			var x = ((iso.X / Constant.TILE_WIDTH_HALF) + (iso.Y / Constant.TILE_HEIGHT_HALF)) / 2;
 			var y = ((iso.Y / Constant.TILE_WIDTH_HALF) - (iso.X / Constant.TILE_HEIGHT_HALF)) / 2;
-			return new Microsoft.Xna.Framework.Vector2(x, y);
+			return new VT2(x, y);
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 IsoToWorld(this (float X, float Y) iso) {
+		public static VT2 IsoToWorld(this (float X, float Y) iso) {
 			var x = ((iso.X / Constant.TILE_WIDTH_HALF) + (iso.Y / Constant.TILE_HEIGHT_HALF)) / 2;
 			var y = ((iso.Y / Constant.TILE_WIDTH_HALF) - (iso.X / Constant.TILE_HEIGHT_HALF)) / 2;
-			return new Microsoft.Xna.Framework.Vector2(x, y);
+			return new VT2(x, y);
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 IsoToWorld(this (int X, int Y) iso) {
+		public static VT2 IsoToWorld(this (int X, int Y) iso) {
 			var x = ((iso.X / Constant.TILE_WIDTH_HALF) + (iso.Y / Constant.TILE_HEIGHT_HALF)) / 2;
 			var y = ((iso.Y / Constant.TILE_WIDTH_HALF) - (iso.X / Constant.TILE_HEIGHT_HALF)) / 2;
-			return new Microsoft.Xna.Framework.Vector2(x, y);
+			return new VT2(x, y);
 		}
 
 		public static double DistanceToOther(this Microsoft.Xna.Framework.Point p, Microsoft.Xna.Framework.Point other, bool isManhattan = false) {
 			return isManhattan ? Math.Abs(p.X - other.X) + Math.Abs(p.Y - other.Y) : Math.Sqrt((p.X - other.X) * (p.X - other.X) + (p.Y - other.Y) * (p.Y - other.Y));
 		}
 
-		public static double DistanceToOther(this Microsoft.Xna.Framework.Vector2 p, Microsoft.Xna.Framework.Vector2 other, bool isManhattan = false) {
+		public static double DistanceToOther(this VT2 p, VT2 other, bool isManhattan = false) {
 			return isManhattan ? Math.Abs(p.X - other.X) + Math.Abs(p.Y - other.Y) : Math.Sqrt((p.X - other.X) * (p.X - other.X) + (p.Y - other.Y) * (p.Y - other.Y));
 		}
 
@@ -93,9 +97,9 @@ namespace TimeIsUp {
 			return value >= max ? max : value <= min ? min : value;
 		}
 
-		public static Microsoft.Xna.Framework.Vector2 Normalizee(this Microsoft.Xna.Framework.Vector2 A) {
+		public static VT2 Normalizee(this VT2 A) {
 			float distance = (float)Math.Sqrt(A.X * A.X + A.Y * A.Y);
-			return new Microsoft.Xna.Framework.Vector2(A.X / distance, A.Y / distance);
+			return new VT2(A.X / distance, A.Y / distance);
 		}
 
 		public static bool IsLever(this SpriteSheetRectName lever) {
@@ -371,6 +375,18 @@ namespace TimeIsUp {
 				}
 			}
 			return output;
+		}
+
+		public static List<VT2> CutIntoAxisAlignVector2(VT2 head, VT2 tail) {
+			var center = new VT2((head.X + tail.X) / 2, (head.Y + tail.Y) / 2);
+
+			return new List<VT2>() {
+				head,
+				new VT2(head.X,center.Y),
+				center,
+				new VT2(center.X,tail.Y),
+				tail
+			};
 		}
 	}
 }

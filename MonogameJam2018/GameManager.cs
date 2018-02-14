@@ -58,14 +58,14 @@ namespace TimeIsUp {
 				SearchPattern = "*.tmx",
 				CallBack = x => {
 					playscreen.Mapname = x;
-					SCREEN_MANAGER.goto_screen("MainPlayScreen");
+					SCREEN_MANAGER.GotoScreen("MainPlayScreen");
 				}
 			};
 
-			SCREEN_MANAGER.add_screen(playscreen);
-			SCREEN_MANAGER.add_screen(transitionScreen);
+			SCREEN_MANAGER.AddScreen(playscreen);
+			SCREEN_MANAGER.AddScreen(transitionScreen);
 
-			SCREEN_MANAGER.goto_screen("TransitionScreen");
+			SCREEN_MANAGER.GotoScreen("TransitionScreen");
 
 			SCREEN_MANAGER.Init();
 		}

@@ -51,6 +51,7 @@ namespace TimeIsUp.GameScreens {
 		Label label_timer;
 
 		MessageBox msgbox;
+		string[] popups;
 
 		bool isWin;
 		bool isDrawCollisionBox = true;
@@ -90,12 +91,13 @@ namespace TimeIsUp.GameScreens {
 		}
 
 		private void InitGame() {
+
 			timer.Reset();
 
 			map = MapLoader.LoadMap(Mapname);
 			maxdepth = ((map.Width + 1) + (map.Height + 1) + (map.Depth + 1)) * 10;
 			mapRenderer = new MapRenderer(map);
-			mapRenderer.LoadContent(spritesheet,font,spriterects,maxdepth);
+			mapRenderer.LoadContent(spritesheet, font, spriterects, maxdepth);
 
 			isWin = false;
 
@@ -110,7 +112,15 @@ namespace TimeIsUp.GameScreens {
 			List<Object> MarkedForRemove = new List<Object>();
 			spawnpoint = new Vector2();
 
+			popups = map.Objects.Values.Where(x => x.TileType == SpriteSheetRectName.Popup).ToList().OrderBy(x => x.Name).Select(x => (string)x.MetaData).ToArray();
+
 			foreach (var obj in map.Objects.Values) {
+
+				if (obj.TileType == SpriteSheetRectName.Popup) {
+					MarkedForRemove.Add(obj);
+					continue;
+				}
+
 				var box = world.Create(obj.BoundingBox.X, obj.BoundingBox.Y, obj.BoundingBox.Width, obj.BoundingBox.Height);
 				box.AddTags(obj.CollisionTag);
 				obj.CollsionBox = box;
@@ -203,8 +213,9 @@ namespace TimeIsUp.GameScreens {
 				case GameState.None:
 					CurrentGameState = GameState.Ready;
 					InitGame();
-					msgbox.Show("Ready?", "Go");
+					msgbox.Show("Ready?\n" + string.Join("\n", popups), "Go");
 					break;
+
 				case GameState.Ready:
 					if (msgboxMiddleButtonPressed) {
 						msgboxMiddleButtonPressed = false;
@@ -247,7 +258,7 @@ namespace TimeIsUp.GameScreens {
 						msgboxLeftButtonPressed = false;
 						//goto main menu
 						CurrentGameState = GameState.None;
-						SCREEN_MANAGER.go_back();
+						SCREEN_MANAGER.GoBack();
 						break;
 					}
 					if (msgboxRightButtonPressed) {
@@ -270,7 +281,7 @@ namespace TimeIsUp.GameScreens {
 						msgboxLeftButtonPressed = false;
 						//goto main menu
 						CurrentGameState = GameState.None;
-						SCREEN_MANAGER.go_back();
+						SCREEN_MANAGER.GoBack();
 						break;
 					}
 					if (msgboxRightButtonPressed) {
@@ -352,10 +363,29 @@ namespace TimeIsUp.GameScreens {
 			spriteBatch.EndSpriteBatch();
 		}
 
+		IEnumerable<Vector2> InteractLink;
+
 		private void DrawLine(Line line) {
-			var p1 = camera.TranslateFromWorldToScreen(line.Point1.WorldToIso()) + pppp;
-			var p2 = camera.TranslateFromWorldToScreen(line.Point2.WorldToIso()) + pppp;
-			drawBatch.DrawLine(Pen.Cyan, p1, p2);
+			var pp = pppp;
+			if (line.Color == Color.Cyan) {
+				//a bit up and left
+				pp += new Vector2(1, 1);
+				pp += new Vector2(1, 1);
+			}
+			else if (line.Color == Color.OrangeRed) {
+				//a bit down and right
+				pp -= new Vector2(1, 1);
+				pp -= new Vector2(1, 1);
+			}
+			
+			InteractLink = line.Points.Select(x => camera.TranslateFromWorldToScreen(x.WorldToIso()) + pp);
+
+			foreach (var p in InteractLink) {
+				InteractLink.Aggregate((v1, v2) => {
+					drawBatch.DrawLine(new Pen(line.Color), v1, v2);
+					return v2;
+				});
+			}
 		}
 
 		private void DrawBox(IBox box) {

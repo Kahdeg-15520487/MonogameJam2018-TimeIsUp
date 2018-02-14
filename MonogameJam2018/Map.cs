@@ -16,7 +16,7 @@ namespace TimeIsUp {
 		public readonly int Height;
 		public readonly int Depth;
 
-		public List<Line> InteractLink { get; private set; }
+		public List<Line> InteractLink { get; set; }
 
 
 		public Map(int width, int height, int depth, SpriteSheetRectName[,] f, SpriteSheetRectName[,] w, List<Object> o, Humper.Base.RectangleF[] collision) {

@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using Humper;
 using Microsoft.Xna.Framework;
 
@@ -15,5 +15,7 @@ namespace TimeIsUp {
 		public Behaviour Deactivate { get; set; }
 		public string OnActivate { get; set; }
 		public string OnDeactivate { get; set; }
+		public Stack<string> Memory { get; set; }
+		public object MetaData { get; set; }
 	}
 }

@@ -49,42 +49,55 @@ namespace TimeIsUp {
 			}
 			List<Object> interactableObj = new List<Object>();
 			foreach (var oo in objects) {
-				var objtiletype = (SpriteSheetRectName)(oo.Tile.Gid - 1);
 				var objname = oo.Name;
-				var x = (float)oo.X / map.TileHeight - 1;
-				var y = (float)oo.Y / map.TileHeight - 1;
-				if (objtiletype != SpriteSheetRectName.None) {
-					var obj = new Object() {
+
+				if (oo.Tile is null) {
+					//popup
+					o.Add(new Object() {
 						Name = objname,
-						WorldPos = new Vector3(x, y, 0),
-						SpriteOrigin = Constant.SPRITE_ORIGIN,
-						TileType = objtiletype,
-						Activate = BehaviourHelper.NoAction(),
-						OnActivate = string.Empty,
-						Deactivate = BehaviourHelper.NoAction(),
-						OnDeactivate = string.Empty
-					};
-					if (objtiletype.GetCollisionTag() != CollisionTag.None) {
-						obj.BoundingBox = GetCollsionBox(new Vector2(x, y), objtiletype);
-						obj.CollisionTag = objtiletype.GetCollisionTag();
-					}
+						TileType = SpriteSheetRectName.Popup,
+						MetaData = oo.Text.Value
+					});
+				}
+				else {
+					//game object
+					var objectiletype = (SpriteSheetRectName)(oo.Tile.Gid - 1);
+					var x = (float)oo.X / map.TileHeight - 1;
+					var y = (float)oo.Y / map.TileHeight - 1;
+					if (objectiletype != SpriteSheetRectName.None) {
+						var obj = new Object() {
+							Name = objname,
+							WorldPos = new Vector3(x, y, 0),
+							SpriteOrigin = Constant.SPRITE_ORIGIN,
+							TileType = objectiletype,
+							Activate = BehaviourHelper.NoAction(),
+							OnActivate = string.Empty,
+							Deactivate = BehaviourHelper.NoAction(),
+							OnDeactivate = string.Empty,
+							Memory = new Stack<string>()
+						};
+						if (objectiletype.GetCollisionTag() != CollisionTag.None) {
+							obj.BoundingBox = GetCollsionBox(new Vector2(x, y), objectiletype);
+							obj.CollisionTag = objectiletype.GetCollisionTag();
+						}
 
-					bool isObjInteractable = false;
-					if (oo.Properties.ContainsKey("OnActivate")) {
-						obj.OnActivate = oo.Properties["OnActivate"];
-						isObjInteractable = true;
-					}
-					if (oo.Properties.ContainsKey("OnDeactivate")) {
-						obj.OnDeactivate = oo.Properties["OnDeactivate"];
-						isObjInteractable = true;
-					}
+						bool isObjInteractable = false;
+						if (oo.Properties.ContainsKey("OnActivate")) {
+							obj.OnActivate = oo.Properties["OnActivate"];
+							isObjInteractable = true;
+						}
+						if (oo.Properties.ContainsKey("OnDeactivate")) {
+							obj.OnDeactivate = oo.Properties["OnDeactivate"];
+							isObjInteractable = true;
+						}
 
-					if (isObjInteractable) {
-						interactableObj.Add(obj);
-						o.Add(obj);
-					}
-					else {
-						o.Add(obj);
+						if (isObjInteractable) {
+							interactableObj.Add(obj);
+							o.Add(obj);
+						}
+						else {
+							o.Add(obj);
+						}
 					}
 				}
 			}
@@ -97,28 +110,50 @@ namespace TimeIsUp {
 
 			var processedMap = new Map(mapwidth, mapheight, 3, f, w, o, collision.ToArray());
 
+			List<Line> intLink = new List<Line>();
+
 			foreach (var obj in interactableObj) {
 				if (!string.IsNullOrEmpty(obj.OnActivate)) {
-					processedMap.Objects[obj.Name].Activate = BehaviourParser(processedMap, obj.OnActivate);
+					processedMap.Objects[obj.Name].Activate = BehaviourParser(processedMap, obj.Name, obj.OnActivate);
+					foreach (var target in BehaviourHelper.GetAllTarget(processedMap, obj.OnActivate.Split(';'))) {
+						var ps = HelperMethod.CutIntoAxisAlignVector2(obj.WorldPos.ToVector2(), target.WorldPos.ToVector2()).ToArray();
+						intLink.Add(new Line(Color.Cyan, ps));
+					}
 				}
 
 				if (!string.IsNullOrEmpty(obj.OnDeactivate)) {
-					processedMap.Objects[obj.Name].Deactivate = BehaviourParser(processedMap, obj.OnDeactivate);
+					processedMap.Objects[obj.Name].Deactivate = BehaviourParser(processedMap, obj.Name, obj.OnDeactivate);
+					foreach (var target in BehaviourHelper.GetAllTarget(processedMap, obj.OnDeactivate.Split(';'))) {
+						var ps = HelperMethod.CutIntoAxisAlignVector2(obj.WorldPos.ToVector2(), target.WorldPos.ToVector2()).ToArray();
+						intLink.Add(new Line(Color.OrangeRed, ps));
+					}
 				}
 			}
-			processedMap.FindAllInteractLink();
+
+			//todo separate line that have the same coord
+			//var separator = new Vector2(1, 1);
+			//foreach (var link in intLink) {
+			//	var sls = intLink.Where(x => x.Equals(link)).ToList();
+			//	for (int i = 0; i < sls.Count; i++) {
+			//		sls[i].Point1 += separator * i;
+			//		sls[i].Point2 += separator * i;
+			//	}
+			//}
+
+			processedMap.InteractLink = intLink;
+
 			return processedMap;
 		}
 
-		private static Behaviour BehaviourParser(Map context, string behaviour) {
+		private static Behaviour BehaviourParser(Map context, string objname, string behaviour) {
 			var actions = behaviour.Split(';');
 			if (actions.Length == 1) {
 				//single action
-				return BehaviourHelper.Parse(context, actions[0]);
+				return BehaviourHelper.Parse(context, objname, actions[0]);
 			}
 			else {
 				//chained actionss
-				return BehaviourHelper.Parse(context, actions);
+				return BehaviourHelper.Parse(context, objname, actions);
 			}
 		}
 

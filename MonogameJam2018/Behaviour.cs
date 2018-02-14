@@ -1,26 +1,36 @@
-﻿using Humper;
-using Humper.Responses;
-using Microsoft.Xna.Framework;
-using System;
+﻿using Humper.Responses;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TimeIsUp {
 	internal delegate void Behaviour(Object activator);
 	static class BehaviourHelper {
-		internal static Behaviour Parse(Map context, string[] actions) {
-			List<Behaviour> parsedActions = new List<Behaviour>();
-
-			foreach (var action in actions) {
-				parsedActions.Add(Parse(context, action));
-			}
-
-			return RunAction(parsedActions.ToArray());
+		internal static List<Object> GetAllTarget(Map context,string[] actions) {
+			return actions.Select(x => GetTarget(context, x)).ToList();
 		}
 
-		internal static Behaviour Parse(Map context, string action) {
+		internal static Object GetTarget(Map context,string action) {
+			return context.FindObject(action.Split()[1]);
+		}
+
+		internal static Behaviour Parse(Map context, string self, string[] actions) {
+			List<Behaviour> parsedActions = new List<Behaviour>();
+
+			Object s = context.FindObject(self);
+
+			foreach (var action in actions) {
+				parsedActions.Add(Parse(context, s, action));
+			}
+
+			return RunAction(s, parsedActions.ToArray());
+		}
+
+		internal static Behaviour Parse(Map context, string self, string action) {
+			Object s = context.FindObject(self);
+			return Parse(context, s, action);
+		}
+
+		internal static Behaviour Parse(Map context, Object self, string action) {
 			var temp = action.Split();
 			var verb = temp[0];
 			var targetName = temp[1];
@@ -68,8 +78,9 @@ namespace TimeIsUp {
 			};
 		}
 
-		internal static Behaviour RunAction(params Behaviour[] actions) {
+		internal static Behaviour RunAction(Object self, params Behaviour[] actions) {
 			return (activator) => {
+				self.Memory.Clear();
 				foreach (var action in actions) {
 					action(activator);
 				}
@@ -114,10 +125,10 @@ namespace TimeIsUp {
 				var dir = otherPortal.TileType.GetSpriteDirection();
 				switch (dir) {
 					case Direction.up:
-						destY += 0.5f;
+						destY += 0.2f;
 						break;
 					case Direction.left:
-						destX += 0.5f;
+						destX += 0.2f;
 						break;
 				}
 				activator.CollsionBox.Move(destX, destY, (c) => CollisionResponses.Cross);
