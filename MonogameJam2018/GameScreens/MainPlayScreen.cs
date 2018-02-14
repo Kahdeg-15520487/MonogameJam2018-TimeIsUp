@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using System.Linq;
-using TiledSharp;
 using LilyPath;
 using System;
 using Microsoft.Xna.Framework.Input;
@@ -52,7 +51,9 @@ namespace TimeIsUp.GameScreens {
 
 		private Vector2 spawnpoint;
 		private Vector2 endpoint;
-		private bool msgboxButtonPressed;
+		private bool msgboxMiddleButtonPressed;
+		private bool msgboxLeftButtonPressed;
+		private bool msgboxRightButtonPressed;
 
 		public MainPlayScreen(GraphicsDevice device) : base(device, "MainPlayScreen") { }
 
@@ -84,11 +85,6 @@ namespace TimeIsUp.GameScreens {
 			isWin = false;
 
 			world = new World(map.Width, map.Height);
-
-			//world.Create(-1, -1, 10, 1);
-			//world.Create(-1, -1, 1, 50);
-			//world.Create(9, -1, 1, 50);
-			//world.Create(-1, 49, 10, 1);
 
 			foreach (var collbox in map.Collsion) {
 				world.Create(collbox.X, collbox.Y, collbox.Width, collbox.Height);
@@ -145,9 +141,9 @@ namespace TimeIsUp.GameScreens {
 		public void InitUI() {
 			canvas = new Canvas();
 			msgbox = new MessageBox(new Point(300, 200), "text", "OK");
-			msgbox.ButtonPressed += (o, e) => {
-				msgboxButtonPressed = true;
-			};
+			msgbox.MiddleButtonPressed += (o, e) => msgboxMiddleButtonPressed = true;
+			msgbox.LeftButtonPressed += (o, e) => msgboxLeftButtonPressed = true;
+			msgbox.RightButtonPressed += (o, e) => msgboxRightButtonPressed = true;
 			label_timer = new Label("", new Point(10, 10), new Vector2(50, 30), font) {
 				Origin = new Vector2(0, -20)
 			};
@@ -172,8 +168,8 @@ namespace TimeIsUp.GameScreens {
 					msgbox.Show("Ready?", "Go");
 					break;
 				case GameState.Ready:
-					if (msgboxButtonPressed) {
-						msgboxButtonPressed = false;
+					if (msgboxMiddleButtonPressed) {
+						msgboxMiddleButtonPressed = false;
 						gameState = GameState.Ingame;
 						msgbox.Hide();
 						timer.Start();
@@ -183,7 +179,8 @@ namespace TimeIsUp.GameScreens {
 					if (isWin) {
 						gameState = GameState.Endgame;
 						timer.Stop();
-						msgbox.Show("You finished the level in:" + Environment.NewLine + timer.ElapsedTime + " s" + Environment.NewLine + "Restart?", "OK");
+						msgbox.Show("You finished the level in:" + Environment.NewLine + timer.ElapsedTime + " s" + Environment.NewLine + "Restart?", "Next lvl", "Exit", "Restart");
+						break;
 					}
 
 					timer.Update(gameTime);
@@ -207,9 +204,23 @@ namespace TimeIsUp.GameScreens {
 					}
 					break;
 				case GameState.Endgame:
-					if (msgboxButtonPressed) {
-						msgboxButtonPressed = false;
+					if (msgboxMiddleButtonPressed) {
+						msgboxMiddleButtonPressed = false;
+						//goto next level
+						//gameState = GameState.None;
+						break;
+					}
+					if (msgboxLeftButtonPressed) {
+						msgboxLeftButtonPressed = false;
+						//goto main menu
+						//gameState = GameState.None;
+						break;
+					}
+					if (msgboxRightButtonPressed) {
+						msgboxRightButtonPressed = false;
+						//restart next level
 						gameState = GameState.None;
+						break;
 					}
 					break;
 				default:
