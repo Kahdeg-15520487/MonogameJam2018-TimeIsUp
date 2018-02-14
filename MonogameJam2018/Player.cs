@@ -1,7 +1,6 @@
 ﻿using Humper;
 using Humper.Responses;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Newtonsoft.Json;
@@ -18,15 +17,11 @@ namespace TimeIsUp {
 	class Player : IMovableObject {
 		AnimatedEntity animatedEntity;
 		SpriteFont font;
-		Map map;
 		MainPlayScreen screen;
 
 		Direction dir;
 
-		Object lastSteppedFloorWitch = null;
-		Object lastLever = null;
-		Object lastLadder = null;
-		Object lastHole = null;
+		Object lastInteractableObject = null;
 
 		public IBox CollisionBox { get; set; }
 		public VT2 WorldPos { get { return new VT2(CollisionBox.X, CollisionBox.Y); } }
@@ -41,6 +36,7 @@ namespace TimeIsUp {
 		}
 		public VT2 Velocity { get; set; } = VT2.Zero;
 		public float MovementSpeed { get; set; } = 0.07f;
+		public Object Object { get; set; }
 
 		public bool isFalling = false;
 
@@ -89,17 +85,14 @@ namespace TimeIsUp {
 		private void Interact(KeyboardState currentKeyboardState, KeyboardState lastKeyboardState) {
 			//todo make interactable object a universal method
 			if (HelperMethod.IsKeyPress(Keys.E, currentKeyboardState, lastKeyboardState)) {
-				if (lastLever != null) {
-					lastLever.TileType = lastLever.TileType.FlipSwitch();
-					if (lastLever.TileType.IsOn()) {
-						lastLever.Activate(lastLever);
+				if (lastInteractableObject != null && lastInteractableObject.TileType.IsLever()) {
+					lastInteractableObject.TileType = lastInteractableObject.TileType.FlipSwitch();
+					if (lastInteractableObject.TileType.IsOn()) {
+						lastInteractableObject.Activate(lastInteractableObject);
 					}
-					else if (lastLever.TileType.IsOff()) {
-						lastLever.Deactivate(lastLever);
+					else if (lastInteractableObject.TileType.IsOff()) {
+						lastInteractableObject.Deactivate(lastInteractableObject);
 					}
-				}
-				if (lastLadder != null) {
-					//next level stuff
 				}
 			}
 		}
@@ -159,18 +152,7 @@ namespace TimeIsUp {
 					break;
 			}
 
-			if (isFalling) {
-				//Velocity = VT2.Zero;
-				Velocity = (lastHole.WorldPos.ToVector2() - WorldPos);
-			}
-
 			var move = CollisionBox.Move(curpos.X + Velocity.X, curpos.Y + Velocity.Y, x => {
-
-				if (x.Other.HasTag(CollisionTag.Hole)) {
-					isFalling = true;
-					lastHole = (Object)x.Other.Data;
-					return CollisionResponses.Cross;
-				}
 
 				if (x.Other.HasTag(CollisionTag.FloorSwitch)) {
 					return CollisionResponses.Cross;
@@ -201,24 +183,24 @@ namespace TimeIsUp {
 				Object obj = (Object)floorswitch.Box.Data;
 				obj.TileType = SpriteSheetRectName.ButtonPressed_E;
 				obj.Activate(obj);
-				lastSteppedFloorWitch = obj;
+				lastInteractableObject = obj;
 			}
 			else {
-				if (lastSteppedFloorWitch != null) {
-					lastSteppedFloorWitch.TileType = SpriteSheetRectName.Button_E;
-					lastSteppedFloorWitch.Deactivate(lastSteppedFloorWitch);
-					lastSteppedFloorWitch = null;
+				if (lastInteractableObject != null) {
+					lastInteractableObject.TileType = SpriteSheetRectName.Button_E;
+					lastInteractableObject.Deactivate(lastInteractableObject);
+					lastInteractableObject = null;
 				}
 			}
 
 			var lever = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.Lever));
 			if (lever != null) {
 				Object obj = (Object)lever.Box.Data;
-				lastLever = obj;
+				lastInteractableObject = obj;
 			}
 			else {
-				if (lastLever != null) {
-					lastLever = null;
+				if (lastInteractableObject != null) {
+					lastInteractableObject = null;
 				}
 			}
 
@@ -227,6 +209,12 @@ namespace TimeIsUp {
 				Block obj = (Block)block.Box.Data;
 				var n = block.Normal;
 				obj.Velocity = new VT2(n.X * n.X, n.Y * n.Y) * Velocity;
+			}
+
+			var portal = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.Portal));
+			if (portal!= null) {
+				Object obj = (Object)portal.Box.Data;
+				obj.Activate(Object);
 			}
 
 			animatedEntity.Position = IsoPos;

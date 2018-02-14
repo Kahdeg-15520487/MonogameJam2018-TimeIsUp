@@ -11,7 +11,7 @@ namespace TimeIsUp {
 		public SpriteSheetRectName[,] Floors { get; private set; }
 		public SpriteSheetRectName[,] Walls { get; private set; }
 		public Humper.Base.RectangleF[] Collsion { get; private set; }
-		public List<Object> Objects { get; private set; }
+		public Dictionary<string, Object> Objects { get; private set; }
 		public readonly int Width;
 		public readonly int Height;
 		public readonly int Depth;
@@ -29,7 +29,7 @@ namespace TimeIsUp {
 			Depth = depth;
 			Floors = f;
 			Walls = w;
-			Objects = o;
+			Objects = o.ToDictionary(x => x.Name, x => x);
 			Collsion = collision;
 		}
 
@@ -44,15 +44,15 @@ namespace TimeIsUp {
 		}
 
 		public Object FindObject(SpriteSheetRectName obj) {
-			return Objects.FirstOrDefault(x => x.TileType == obj);
+			return Objects.FirstOrDefault(x => x.Value.TileType == obj).Value;
 		}
 
 		public Object FindObject(string objname) {
-			return Objects.FirstOrDefault(x => x.Name == objname);
+			return Objects.ContainsKey(objname) ? Objects[objname] : null;
 		}
 
-		public Object FindObject(Func<Object, bool> predicate) {
-			return Objects.FirstOrDefault(predicate);
+		public Object FindObject(Func<KeyValuePair<string, Object>, bool> predicate) {
+			return Objects.FirstOrDefault(predicate).Value;
 		}
 
 		public void LoadContent() {
@@ -79,7 +79,7 @@ namespace TimeIsUp {
 					}
 				}
 			}
-			foreach (var obj in Objects) {
+			foreach (var obj in Objects.Values) {
 				//var dos = 0.7f - (((obj.Position.X * Constant.TILE_WIDTH_HALF) + (obj.Position.Y * Constant.TILE_HEIGHT_HALF)) / maxdepth);
 				//var dos = 0.7f - (((obj.Position.X) + (obj.Position.Y)) / maxdepth);
 				var dos = 0.7f - ((obj.WorldPos.X + obj.WorldPos.Y + obj.WorldPos.Z) / maxdepth) - 0.001f;
@@ -128,7 +128,7 @@ namespace TimeIsUp {
 			writer.WriteEndArray();
 
 			writer.WritePropertyName("Objects");
-			serializer.Serialize(writer, map.Objects);
+			serializer.Serialize(writer, map.Objects.Values.ToList());
 
 			writer.WritePropertyName("CollisionCount");
 			serializer.Serialize(writer, map.Collsion.Length);

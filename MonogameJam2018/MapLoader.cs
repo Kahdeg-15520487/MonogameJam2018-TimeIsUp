@@ -81,6 +81,7 @@ namespace TimeIsUp {
 
 					if (isObjInteractable) {
 						interactableObj.Add(obj);
+						o.Add(obj);
 					}
 					else {
 						o.Add(obj);
@@ -98,20 +99,18 @@ namespace TimeIsUp {
 
 			foreach (var obj in interactableObj) {
 				if (!string.IsNullOrEmpty(obj.OnActivate)) {
-					obj.Activate = BehaviourParser(processedMap, obj.OnActivate);
+					processedMap.Objects[obj.Name].Activate = BehaviourParser(processedMap, obj.OnActivate);
 				}
 
 				if (!string.IsNullOrEmpty(obj.OnDeactivate)) {
-					obj.Deactivate = BehaviourParser(processedMap, obj.OnDeactivate);
+					processedMap.Objects[obj.Name].Deactivate = BehaviourParser(processedMap, obj.OnDeactivate);
 				}
-
-				processedMap.Objects.Add(obj);
 			}
 			processedMap.FindAllInteractLink();
 			return processedMap;
 		}
 
-		private static Behaviour BehaviourParser(Map context,string behaviour) {
+		private static Behaviour BehaviourParser(Map context, string behaviour) {
 			var actions = behaviour.Split(';');
 			if (actions.Length == 1) {
 				//single action
@@ -188,6 +187,24 @@ namespace TimeIsUp {
 					result.Y = pos.Y - 0.3f;
 					result.Width = 1;
 					result.Height = 1;
+					break;
+
+				case CollisionTag.Portal:
+					switch (dir) {
+						case Direction.up:
+							result.X = pos.X - 0.2f;
+							result.Y = pos.Y - 0.4f;
+							result.Width = 0.3f;
+							result.Height = 0.2f;
+							break;
+
+						case Direction.left:
+							result.X = pos.X - 0.4f;
+							result.Y = pos.Y - 0.2f;
+							result.Width = 0.2f;
+							result.Height = 0.3f;
+							break;
+					}
 					break;
 			}
 

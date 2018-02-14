@@ -25,7 +25,9 @@ namespace TimeIsUp {
 
 		public VT2 WorldPos => new VT2(CollisionBox.X, CollisionBox.Y);
 
-		public VT2 Velocity;
+		public VT2 Velocity { get; set; }
+		public float MovementSpeed { get; set; }
+
 		private Object lastSteppedFloorSwitch;
 
 		public void LoadContent(MainPlayScreen screen) {
@@ -64,6 +66,12 @@ namespace TimeIsUp {
 					lastSteppedFloorSwitch.Deactivate(lastSteppedFloorSwitch);
 					lastSteppedFloorSwitch = null;
 				}
+			}
+
+			var portal = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.Portal));
+			if (portal != null) {
+				Object obj = (Object)portal.Box.Data;
+				obj.Activate(Object);
 			}
 
 			Object.WorldPos = new Vector3(WorldPos.X, WorldPos.Y, 0);

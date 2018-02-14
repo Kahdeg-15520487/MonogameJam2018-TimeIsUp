@@ -95,13 +95,16 @@ namespace TimeIsUp.GameScreens {
 			List<Object> MarkedForRemove = new List<Object>();
 			spawnpoint = new Vector2();
 
-			foreach (var obj in map.Objects) {
+			foreach (var obj in map.Objects.Values) {
 				var box = world.Create(obj.BoundingBox.X, obj.BoundingBox.Y, obj.BoundingBox.Width, obj.BoundingBox.Height);
 				box.AddTags(obj.CollisionTag);
 				obj.CollsionBox = box;
 				if (obj.TileType.GetCollisionTag() == CollisionTag.PushableBlock) {
 					MarkedForRemove.Add(obj);
-					var block = new Block() { CollisionBox = box, Object = obj };
+					var block = new Block() {
+						CollisionBox = box,
+						Object = obj
+					};
 					MovableObjects.Add(block);
 					box.Data = block;
 				}
@@ -123,15 +126,22 @@ namespace TimeIsUp.GameScreens {
 			}
 
 			foreach (var obj in MarkedForRemove) {
-				map.Objects.Remove(obj);
+				map.Objects.Remove(obj.Name);
 			}
 
 			foreach (var obj in MovableObjects) {
 				obj.LoadContent(this);
 			}
-
+			var pbox = world.Create(spawnpoint.X, spawnpoint.Y, 0.5f, 0.5f);
+			Object pobj = new Object() {
+				Name = "player",
+				CollsionBox = pbox,
+				TileType = SpriteSheetRectName.None
+			};
+			map.Objects.Add(pobj.Name, pobj);
 			player = new Player {
-				CollisionBox = world.Create(spawnpoint.X, spawnpoint.Y, 0.5f, 0.5f)
+				Object = pobj,
+				CollisionBox = pobj.CollsionBox
 			};
 			player.LoadContent(this);
 			player.Origin = new Vector2(128, 512);
@@ -140,7 +150,7 @@ namespace TimeIsUp.GameScreens {
 
 		public void InitUI() {
 			canvas = new Canvas();
-			msgbox = new MessageBox(new Point(300, 200), "text", "OK");
+			msgbox = new MessageBox(new Point(280, 200), "text", "OK");
 			msgbox.MiddleButtonPressed += (o, e) => msgboxMiddleButtonPressed = true;
 			msgbox.LeftButtonPressed += (o, e) => msgboxLeftButtonPressed = true;
 			msgbox.RightButtonPressed += (o, e) => msgboxRightButtonPressed = true;

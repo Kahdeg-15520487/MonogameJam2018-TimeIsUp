@@ -10,6 +10,9 @@ namespace TimeIsUp {
 		Vector2 IsoPos { get; }
 		Vector2 Origin { get; set; }
 		Vector2 WorldPos { get; }
+		Vector2 Velocity { get; set; }
+		float MovementSpeed { get; set; }
+		Object Object { get; set; }
 
 		void LoadContent(MainPlayScreen screen);
 		void Update(GameTime gameTime, KeyboardState currentKeyboardState, KeyboardState lastKeyboardState);

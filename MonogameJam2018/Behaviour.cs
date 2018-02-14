@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Humper;
+using Humper.Responses;
+using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,22 +23,24 @@ namespace TimeIsUp {
 		internal static Behaviour Parse(Map context, string action) {
 			var temp = action.Split();
 			var verb = temp[0];
-			var target = temp[1];
-			Object tg = context.FindObject(target);
-			if (tg is null) {
+			var targetName = temp[1];
+			Object target = context.FindObject(targetName);
+			if (target is null) {
 				//todo handle object not found
 			}
 			//todo check object type
 
 			switch (verb) {
 				case "open":
-					return OpenDoor(tg);
+					return OpenDoor(target);
 				case "close":
-					return CloseDoor(tg);
+					return CloseDoor(target);
 				case "turnon":
-					return TurnLightOn(tg);
+					return TurnLightOn(target);
 				case "turnoff":
-					return TurnLightOff(tg);
+					return TurnLightOff(target);
+				case "teleportto":
+					return TeleportTo(target);
 				default:
 					return NoAction();
 			}
@@ -98,6 +103,24 @@ namespace TimeIsUp {
 					return;
 				}
 				light.TileType = light.TileType.TurnLightOff();
+			};
+		}
+
+		internal static Behaviour TeleportTo(Object otherPortal) {
+			return (activator) => {
+				//todo some how teleport the activator to the other portal
+				var destX = otherPortal.WorldPos.X;
+				var destY = otherPortal.WorldPos.Y;
+				var dir = otherPortal.TileType.GetSpriteDirection();
+				switch (dir) {
+					case Direction.up:
+						destY += 0.5f;
+						break;
+					case Direction.left:
+						destX += 0.5f;
+						break;
+				}
+				activator.CollsionBox.Move(destX, destY, (c) => CollisionResponses.Cross);
 			};
 		}
 	}

@@ -98,6 +98,18 @@ namespace TimeIsUp {
 			return new Microsoft.Xna.Framework.Vector2(A.X / distance, A.Y / distance);
 		}
 
+		public static bool IsLever(this SpriteSheetRectName lever) {
+			switch (lever) {
+				case SpriteSheetRectName.WallSwitchOff_N:
+				case SpriteSheetRectName.WallSwitchOff_W:
+				case SpriteSheetRectName.WallSwitchOn_N:
+				case SpriteSheetRectName.WallSwitchOn_W:
+					return true;
+				default:
+					return false;
+			}
+		}
+
 		public static bool IsOn(this SpriteSheetRectName swt) {
 			switch (swt) {
 				case SpriteSheetRectName.WallSwitchOn_W:
@@ -262,6 +274,11 @@ namespace TimeIsUp {
 				case SpriteSheetRectName.WallWindow_W:
 					result = CollisionTag.Wall;
 					break;
+
+				case SpriteSheetRectName.Portal_N:
+				case SpriteSheetRectName.Portal_W:
+					result = CollisionTag.Portal;
+					break;
 				default:
 					break;
 			}
@@ -282,6 +299,17 @@ namespace TimeIsUp {
 					return Direction.down;
 			}
 			return Direction.none;
+		}
+
+		public static T[] RemoveAt<T>(this T[] source, int index) {
+			T[] dest = new T[source.Length - 1];
+			if (index > 0)
+				Array.Copy(source, 0, dest, 0, index);
+
+			if (index < source.Length - 1)
+				Array.Copy(source, index + 1, dest, index, source.Length - index - 1);
+
+			return dest;
 		}
 	}
 
