@@ -59,6 +59,7 @@
     <Compile Include="Line.cs" />
     <Compile Include="Map.cs" />
     <Compile Include="MapLoader.cs" />
+    <Compile Include="MapRenderer.cs" />
     <Compile Include="Object.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />

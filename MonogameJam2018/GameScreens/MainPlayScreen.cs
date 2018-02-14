@@ -22,15 +22,26 @@ namespace TimeIsUp.GameScreens {
 			Ready,
 			Ingame,
 			Endgame,
-			MapEdit
+			MapEdit,
+			Pause
 		}
 
-		GameState gameState = GameState.None;
+		Stack<GameState> gameStates;
+		GameState CurrentGameState {
+			get {
+				return gameStates.Peek();
+			}
+			set {
+				gameStates.Pop();
+				gameStates.Push(value);
+			}
+		}
 
 		DrawBatch drawBatch;
 		Canvas canvas;
 		Camera camera;
 		Map map;
+		MapRenderer mapRenderer;
 		public string Mapname { get; set; }
 		internal static float maxdepth;
 		World world;
@@ -62,6 +73,8 @@ namespace TimeIsUp.GameScreens {
 			drawBatch = new DrawBatch(device);
 			camera = new Camera(device.Viewport);
 			timer = new Timer();
+			gameStates = new Stack<GameState>();
+			gameStates.Push(GameState.None);
 
 			spritesheet = CONTENT_MANAGER.Sprites["spritesheet"];
 			font = CONTENT_MANAGER.Fonts["default"];
@@ -81,7 +94,8 @@ namespace TimeIsUp.GameScreens {
 
 			map = MapLoader.LoadMap(Mapname);
 			maxdepth = ((map.Width + 1) + (map.Height + 1) + (map.Depth + 1)) * 10;
-			map.LoadContent();
+			mapRenderer = new MapRenderer(map);
+			mapRenderer.LoadContent(spritesheet,font,spriterects,maxdepth);
 
 			isWin = false;
 
@@ -172,37 +186,42 @@ namespace TimeIsUp.GameScreens {
 
 		public override void Update(GameTime gameTime) {
 
-			if (HelperMethod.IsKeyPress(Keys.R, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
-				gameState = GameState.None;
+			if (HelperMethod.IsKeyPress(Keys.Escape, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
+				if (CurrentGameState != GameState.Pause) {
+					msgbox.Show("Game Paused!", "Continue", "Exit", "Restart");
+					timer.Stop();
+					gameStates.Push(GameState.Pause);
+				}
 			}
 
-			switch (gameState) {
+			if (HelperMethod.IsKeyPress(Keys.R, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
+				gameStates.Clear();
+				gameStates.Push(GameState.None);
+			}
+
+			switch (CurrentGameState) {
 				case GameState.None:
-					gameState = GameState.Ready;
+					CurrentGameState = GameState.Ready;
 					InitGame();
 					msgbox.Show("Ready?", "Go");
 					break;
 				case GameState.Ready:
 					if (msgboxMiddleButtonPressed) {
 						msgboxMiddleButtonPressed = false;
-						gameState = GameState.Ingame;
+						CurrentGameState = GameState.Ingame;
 						msgbox.Hide();
 						timer.Start();
 					}
 					break;
 				case GameState.Ingame:
 					if (isWin) {
-						gameState = GameState.Endgame;
+						CurrentGameState = GameState.Endgame;
 						timer.Stop();
 						msgbox.Show("You finished the level in:" + Environment.NewLine + timer.ElapsedTime + " s" + Environment.NewLine + "Restart?", "Next lvl", "Exit", "Restart");
 						break;
 					}
 
 					timer.Update(gameTime);
-
-					if (HelperMethod.IsKeyPress(Keys.P, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
-						gameState = GameState.None;
-					}
 
 					if (HelperMethod.IsKeyPress(Keys.L, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
 						isDrawCollisionBox = !isDrawCollisionBox;
@@ -222,19 +241,42 @@ namespace TimeIsUp.GameScreens {
 					if (msgboxMiddleButtonPressed) {
 						msgboxMiddleButtonPressed = false;
 						//goto next level
-						//gameState = GameState.None;
 						break;
 					}
 					if (msgboxLeftButtonPressed) {
 						msgboxLeftButtonPressed = false;
 						//goto main menu
-						//gameState = GameState.None;
+						CurrentGameState = GameState.None;
+						SCREEN_MANAGER.go_back();
 						break;
 					}
 					if (msgboxRightButtonPressed) {
 						msgboxRightButtonPressed = false;
-						//restart next level
-						gameState = GameState.None;
+						//restart level
+						CurrentGameState = GameState.None;
+						break;
+					}
+					break;
+				case GameState.Pause:
+					if (msgboxMiddleButtonPressed) {
+						msgboxMiddleButtonPressed = false;
+						//continue
+						msgbox.Hide();
+						gameStates.Pop();
+						timer.Continue();
+						break;
+					}
+					if (msgboxLeftButtonPressed) {
+						msgboxLeftButtonPressed = false;
+						//goto main menu
+						CurrentGameState = GameState.None;
+						SCREEN_MANAGER.go_back();
+						break;
+					}
+					if (msgboxRightButtonPressed) {
+						msgboxRightButtonPressed = false;
+						//restart level
+						CurrentGameState = GameState.None;
 						break;
 					}
 					break;
@@ -277,9 +319,13 @@ namespace TimeIsUp.GameScreens {
 		}
 
 		public override void Draw(SpriteBatch spriteBatch, GameTime gameTime) {
+			if (map is null) {
+				return;
+			}
+
 			spriteBatch.BeginSpriteBatchWithCamera(camera, SpriteSortMode.BackToFront);
 
-			map.Draw(spriteBatch, gameTime);
+			mapRenderer.Draw(spriteBatch);
 
 			var depthoffset = 0.7f - ((player.WorldPos.X + player.WorldPos.Y) / maxdepth) - 0.002f;
 			MovableObjects.ForEach(x => x.Draw(spriteBatch, gameTime, depthoffset));

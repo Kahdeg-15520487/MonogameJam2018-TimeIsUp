@@ -53,9 +53,19 @@ namespace TimeIsUp {
 				Mapname = CONTENT_MANAGER.MapName ?? "lvl1"
 			};
 
-			SCREEN_MANAGER.add_screen(playscreen);
+			TransitionScreen transitionScreen = new TransitionScreen(GraphicsDevice) {
+				StartingDirectory = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map"),
+				SearchPattern = "*.tmx",
+				CallBack = x => {
+					playscreen.Mapname = x;
+					SCREEN_MANAGER.goto_screen("MainPlayScreen");
+				}
+			};
 
-			SCREEN_MANAGER.goto_screen("MainPlayScreen");
+			SCREEN_MANAGER.add_screen(playscreen);
+			SCREEN_MANAGER.add_screen(transitionScreen);
+
+			SCREEN_MANAGER.goto_screen("TransitionScreen");
 
 			SCREEN_MANAGER.Init();
 		}
@@ -78,8 +88,8 @@ namespace TimeIsUp {
 		}
 
 		protected override void Update(GameTime gameTime) {
-			if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-				Exit();
+			//if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+			//	Exit();
 
 			CONTENT_MANAGER.CurrentInputState = new InputState(Mouse.GetState(), Keyboard.GetState());
 

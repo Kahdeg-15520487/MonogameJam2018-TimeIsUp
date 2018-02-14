@@ -151,6 +151,32 @@ namespace TimeIsUp {
 			return swt;
 		}
 
+		public static SpriteSheetRectName PressOnFloorSwitch(this SpriteSheetRectName floorswitch) {
+			switch (floorswitch) {
+				case SpriteSheetRectName.Button_E:
+					return SpriteSheetRectName.ButtonPressed_E;
+			}
+			return floorswitch;
+		}
+
+		public static SpriteSheetRectName ReleaseFloorSwitch(this SpriteSheetRectName floorswitch) {
+			switch (floorswitch) {
+				case SpriteSheetRectName.ButtonPressed_E:
+					return SpriteSheetRectName.Button_E;
+			}
+			return floorswitch;
+		}
+
+		public static bool IsFloorSwitch(this SpriteSheetRectName spriteSheetRectName) {
+			switch (spriteSheetRectName) {
+				case SpriteSheetRectName.ButtonPressed_E:
+				case SpriteSheetRectName.Button_E:
+					return true;
+				default:
+					return false;
+			}
+		}
+
 		public static SpriteSheetRectName TurnLightOn(this SpriteSheetRectName light) {
 			switch (light) {
 				case SpriteSheetRectName.WallLightOff_N:

@@ -186,7 +186,7 @@ namespace TimeIsUp {
 				lastInteractableObject = obj;
 			}
 			else {
-				if (lastInteractableObject != null) {
+				if (lastInteractableObject != null && lastInteractableObject.TileType.IsFloorSwitch()) {
 					lastInteractableObject.TileType = SpriteSheetRectName.Button_E;
 					lastInteractableObject.Deactivate(lastInteractableObject);
 					lastInteractableObject = null;
@@ -199,7 +199,7 @@ namespace TimeIsUp {
 				lastInteractableObject = obj;
 			}
 			else {
-				if (lastInteractableObject != null) {
+				if (lastInteractableObject != null && lastInteractableObject.TileType.IsLever()) {
 					lastInteractableObject = null;
 				}
 			}
