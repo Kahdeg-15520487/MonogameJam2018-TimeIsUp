@@ -21,7 +21,8 @@ namespace TimeIsUp.GameScreens {
 			None,
 			Ready,
 			Ingame,
-			Endgame
+			Endgame,
+			MapEdit
 		}
 
 		GameState gameState = GameState.None;
@@ -78,7 +79,7 @@ namespace TimeIsUp.GameScreens {
 		private void InitGame() {
 			timer.Reset();
 
-			map = MapLoader.LoadMap(Mapname); // new TmxMap(Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", "test.tmx"));
+			map = MapLoader.LoadMap(Mapname);
 			maxdepth = ((map.Width + 1) + (map.Height + 1) + (map.Depth + 1)) * 10;
 			map.LoadContent();
 
@@ -170,6 +171,10 @@ namespace TimeIsUp.GameScreens {
 		}
 
 		public override void Update(GameTime gameTime) {
+
+			if (HelperMethod.IsKeyPress(Keys.R, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
+				gameState = GameState.None;
+			}
 
 			switch (gameState) {
 				case GameState.None:
