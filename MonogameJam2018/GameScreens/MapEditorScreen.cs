@@ -25,6 +25,9 @@ namespace TimeIsUp.GameScreens {
 
 		public void InitUI() {
 			canvas = new Canvas();
+
+			InputBox inputBox = new InputBox("", new Point(400, 50), new Vector2(80, 30), CONTENT_MANAGER.Fonts["hack"], Color.White, Color.Black);
+			canvas.AddElement("inputBox", inputBox);
 		}
 
 		public override void Shutdown() {

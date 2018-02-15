@@ -82,7 +82,7 @@ namespace TimeIsUp {
 			CONTENT_MANAGER.spriteBatch = new SpriteBatch(GraphicsDevice);
 
 			#region Load font
-			CONTENT_MANAGER.LoadFont("default");
+			CONTENT_MANAGER.LoadFont("default", "hack");
 			#endregion
 
 			#region Load spritesheet

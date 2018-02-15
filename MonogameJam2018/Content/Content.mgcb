@@ -50,3 +50,10 @@
 /processorParam:TextureFormat=Compressed
 /build:font/default.spritefont
 
+#begin font/hack.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:font/hack.spritefont
+

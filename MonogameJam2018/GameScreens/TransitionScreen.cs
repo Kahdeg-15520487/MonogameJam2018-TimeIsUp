@@ -25,9 +25,6 @@ namespace TimeIsUp.GameScreens {
 		public override bool Init() {
 			base.Init();
 
-			InputBox inputBox = new InputBox("", new Point(400, 50), null, font, Color.Black, Color.WhiteSmoke);
-			canvas.AddElement("inputBox", inputBox);
-
 			//todo implement some kind of map preview
 			#region minimap render
 			//spritesheet = CONTENT_MANAGER.Sprites["spritesheet"];
