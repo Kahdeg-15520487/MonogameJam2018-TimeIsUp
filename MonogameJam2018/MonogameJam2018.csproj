@@ -53,6 +53,7 @@
     <Compile Include="Constant.cs" />
     <Compile Include="ExtensionMethod.cs" />
     <Compile Include="GameManager.cs" />
+    <Compile Include="GameScreens\MapEditorScreen.cs" />
     <Compile Include="GameScreens\MainPlayScreen.cs" />
     <Compile Include="GameScreens\TransitionScreen.cs" />
     <Compile Include="IMovableObject.cs" />

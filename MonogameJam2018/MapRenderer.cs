@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using TimeIsUp.GameScreens;
+using Utility;
 
 namespace TimeIsUp {
 	class MapRenderer {
@@ -44,12 +45,16 @@ namespace TimeIsUp {
 			foreach (var obj in map.Objects.Values) {
 				//var dos = 0.7f - (((obj.Position.X * Constant.TILE_WIDTH_HALF) + (obj.Position.Y * Constant.TILE_HEIGHT_HALF)) / maxdepth);
 				//var dos = 0.7f - (((obj.Position.X) + (obj.Position.Y)) / maxdepth);
-				var dos = 0.7f - ((obj.WorldPos.X + obj.WorldPos.Y + obj.WorldPos.Z) / maxdepth) - 0.001f;
+				var dos = 0.7f - ((obj.WorldPos.X + obj.WorldPos.Y + obj.WorldPos.Z) / maxdepth) - 0.01f;
 				Vector2 IsoPos = obj.WorldPos.WorldToIso();
 				if (obj.TileType != SpriteSheetRectName.None) {
 					spriteBatch.Draw(spritesheet, IsoPos, spriterects[obj.TileType], Color.White, 0f, obj.SpriteOrigin, Constant.SCALE, SpriteEffects.None, dos);
 				}
-				spriteBatch.DrawString(font, obj.WorldPos.ToString(), IsoPos, Color.Black);
+				//spriteBatch.DrawString(font, obj.WorldPos.ToString(), IsoPos, Color.Black);
+			}
+			foreach (var annotation in map.Annotations) {
+				Vector2 IsoPos = annotation.WorldPos.WorldToIso();
+				spriteBatch.DrawString(font, annotation.Content, IsoPos, annotation.Color, annotation.Rotation, Vector2.Zero, 1f, SpriteEffects.None, 0f);
 			}
 		}
 	}

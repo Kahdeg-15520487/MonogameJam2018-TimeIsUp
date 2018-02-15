@@ -57,21 +57,28 @@ namespace TimeIsUp {
 			if (floorswitch != null) {
 				Object obj = (Object)floorswitch.Box.Data;
 				obj.TileType = SpriteSheetRectName.ButtonPressed_E;
-				obj.Activate(obj);
+				obj.Activate(Object, obj);
 				lastSteppedFloorSwitch = obj;
 			}
 			else {
 				if (lastSteppedFloorSwitch != null) {
 					lastSteppedFloorSwitch.TileType = SpriteSheetRectName.Button_E;
-					lastSteppedFloorSwitch.Deactivate(lastSteppedFloorSwitch);
+					lastSteppedFloorSwitch.Deactivate(Object, lastSteppedFloorSwitch);
 					lastSteppedFloorSwitch = null;
 				}
+			}
+
+			var block = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.PushableBlock));
+			if (block != null) {
+				Block obj = (Block)block.Box.Data;
+				var n = block.Normal;
+				obj.Velocity = new VT2(n.X * n.X, n.Y * n.Y) * Velocity;
 			}
 
 			var portal = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.Portal));
 			if (portal != null) {
 				Object obj = (Object)portal.Box.Data;
-				obj.Activate(Object);
+				obj.Activate(Object, obj);
 			}
 
 			Object.WorldPos = new Vector3(WorldPos.X, WorldPos.Y, 0);

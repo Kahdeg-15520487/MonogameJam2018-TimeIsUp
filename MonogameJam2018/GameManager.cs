@@ -29,6 +29,8 @@ namespace TimeIsUp {
 			JsonConvert.DefaultSettings = () => {
 				var settings = new JsonSerializerSettings();
 				settings.Converters.Add(new MapJsonConverter());
+				settings.Converters.Add(new ObjectJsonConverter());
+				settings.Converters.Add(new RectangleFJsonConverter());
 				return settings;
 			};
 
@@ -65,7 +67,13 @@ namespace TimeIsUp {
 			SCREEN_MANAGER.AddScreen(playscreen);
 			SCREEN_MANAGER.AddScreen(transitionScreen);
 
-			SCREEN_MANAGER.GotoScreen("TransitionScreen");
+			if (string.IsNullOrEmpty(CONTENT_MANAGER.MapName)) {
+				SCREEN_MANAGER.GotoScreen("TransitionScreen");
+			}
+			else {
+				playscreen.Mapname = CONTENT_MANAGER.MapName;
+				SCREEN_MANAGER.GotoScreen("MainPlayScreen");
+			}
 
 			SCREEN_MANAGER.Init();
 		}

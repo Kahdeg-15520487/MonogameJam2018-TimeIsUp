@@ -88,10 +88,10 @@ namespace TimeIsUp {
 				if (lastInteractableObject != null && lastInteractableObject.TileType.IsLever()) {
 					lastInteractableObject.TileType = lastInteractableObject.TileType.FlipSwitch();
 					if (lastInteractableObject.TileType.IsOn()) {
-						lastInteractableObject.Activate(lastInteractableObject);
+						lastInteractableObject.Activate(Object, lastInteractableObject);
 					}
 					else if (lastInteractableObject.TileType.IsOff()) {
-						lastInteractableObject.Deactivate(lastInteractableObject);
+						lastInteractableObject.Deactivate(Object, lastInteractableObject);
 					}
 				}
 			}
@@ -178,17 +178,19 @@ namespace TimeIsUp {
 				return CollisionResponses.Slide;
 			});
 
+			Object.WorldPos = new Vector3(CollisionBox.X, CollisionBox.Y, 0);
+
 			var floorswitch = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.FloorSwitch));
 			if (floorswitch != null) {
 				Object obj = (Object)floorswitch.Box.Data;
 				obj.TileType = SpriteSheetRectName.ButtonPressed_E;
-				obj.Activate(obj);
+				obj.Activate(Object, obj);
 				lastInteractableObject = obj;
 			}
 			else {
 				if (lastInteractableObject != null && lastInteractableObject.TileType.IsFloorSwitch()) {
 					lastInteractableObject.TileType = SpriteSheetRectName.Button_E;
-					lastInteractableObject.Deactivate(lastInteractableObject);
+					lastInteractableObject.Deactivate(Object, lastInteractableObject);
 					lastInteractableObject = null;
 				}
 			}
@@ -212,9 +214,9 @@ namespace TimeIsUp {
 			}
 
 			var portal = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.Portal));
-			if (portal!= null) {
+			if (portal != null) {
 				Object obj = (Object)portal.Box.Data;
-				obj.Activate(Object);
+				obj.Activate(Object, obj);
 			}
 
 			animatedEntity.Position = IsoPos;
@@ -222,7 +224,7 @@ namespace TimeIsUp {
 		}
 
 		public void Draw(SpriteBatch spriteBatch, GameTime gameTime, float depth) {
-			spriteBatch.DrawString(font, WorldPos.ToString(), IsoPos, Color.Black);
+			//spriteBatch.DrawString(font, WorldPos.ToString(), IsoPos, Color.Black);
 			animatedEntity.Draw(spriteBatch, gameTime, isFalling ? 1f : depth);
 		}
 	}

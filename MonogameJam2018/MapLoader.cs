@@ -1,31 +1,40 @@
-﻿using Microsoft.Xna.Framework;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
+using Microsoft.Xna.Framework;
+
 using TiledSharp;
+using Newtonsoft.Json;
+
 using Utility;
 using Utility.Storage;
 
 namespace TimeIsUp {
 	class MapLoader {
-		public static Map LoadMap(string mapname) {
+
+		public static Map LoadTmxMap(string mapname) {
+			//load the tiled map in
 			var mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".tmx");
+
 			var map = new TmxMap(mappath);
 
+			//define map dimesion
 			var mapwidth = map.Width;
 			var mapheight = map.Height;
+
+			//declare map data array
 			SpriteSheetRectName[,] f;
 			SpriteSheetRectName[,] w;
 			List<Object> o = new List<Object>();
+			List<Annotation> annotations = new List<Annotation>();
 
+			//serialize tiled map data to ingame map data
 			f = HelperMethod.Make2DArray(map.Layers["floor"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
 			w = HelperMethod.Make2DArray(map.Layers["wall"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
 			var objects = map.ObjectGroups["object"].Objects;
 
+			//generate collision bounding box
 			var collision = new List<Humper.Base.RectangleF>();
 			int holecount = 0;
 			for (int y = 0; y < mapheight; y++) {
@@ -47,17 +56,35 @@ namespace TimeIsUp {
 					}
 				}
 			}
+
+			//generate map border collision box
+			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, 0.3f, map.Height));
+			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, mapwidth, 0.3f));
+			collision.Add(new Humper.Base.RectangleF(mapwidth - 0.3f, 0 - 0.3f, 0.3f, map.Height));
+			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, mapheight - 0.3f, mapwidth, 0.3f));
+
+			//process objects
 			List<Object> interactableObj = new List<Object>();
 			foreach (var oo in objects) {
 				var objname = oo.Name;
 
 				if (oo.Tile is null) {
-					//popup
-					o.Add(new Object() {
-						Name = objname,
-						TileType = SpriteSheetRectName.Popup,
-						MetaData = oo.Text.Value
-					});
+					if (objname.StartsWith("popup")) {
+						//popup
+						o.Add(new Object() {
+							Name = objname,
+							TileType = SpriteSheetRectName.Popup,
+							MetaData = oo.Text.Value
+						});
+					}
+					else {
+						//map annotation
+						var x = (float)oo.X / map.TileHeight - 1;
+						var y = (float)oo.Y / map.TileHeight - 1;
+						var color = new Color(oo.Text.Color.R, oo.Text.Color.G, oo.Text.Color.B);
+						var rotation = HelperFunction.DegreeToRadian((float)oo.Rotation);
+						annotations.Add(new Annotation(x, y, oo.Text.Value, color, rotation));
+					}
 				}
 				else {
 					//game object
@@ -91,6 +118,27 @@ namespace TimeIsUp {
 							isObjInteractable = true;
 						}
 
+						Humper.Base.RectangleF portalBase = obj.BoundingBox;
+						switch (obj.TileType) {
+							case SpriteSheetRectName.Portal_N:
+								portalBase = new Humper.Base.RectangleF(obj.WorldPos.X - 0.3f, obj.WorldPos.Y - 0.3f, 1f, 0.2f);
+								collision.Add(portalBase);
+								break;
+							case SpriteSheetRectName.Portal_W:
+								portalBase = new Humper.Base.RectangleF(obj.WorldPos.X - 0.3f, obj.WorldPos.Y - 0.3f, 0.2f, 1f);
+								collision.Add(portalBase);
+								break;
+
+							case SpriteSheetRectName.Portal_S:
+								portalBase = new Humper.Base.RectangleF(obj.WorldPos.X - 0.3f, obj.WorldPos.Y + 0.5f, 1f, 0.2f);
+								collision.Add(portalBase);
+								break;
+							case SpriteSheetRectName.Portal_E:
+								portalBase = new Humper.Base.RectangleF(obj.WorldPos.X + 0.5f, obj.WorldPos.Y - 0.3f, 0.2f, 1f);
+								collision.Add(portalBase);
+								break;
+						}
+
 						if (isObjInteractable) {
 							interactableObj.Add(obj);
 							o.Add(obj);
@@ -102,33 +150,8 @@ namespace TimeIsUp {
 				}
 			}
 
-			//map border
-			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, 0.3f, map.Height));
-			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, mapwidth, 0.3f));
-			collision.Add(new Humper.Base.RectangleF(mapwidth - 0.3f, 0 - 0.3f, 0.3f, map.Height));
-			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, mapheight - 0.3f, mapwidth, 0.3f));
-
-			var processedMap = new Map(mapwidth, mapheight, 3, f, w, o, collision.ToArray());
-
-			List<Line> intLink = new List<Line>();
-
-			foreach (var obj in interactableObj) {
-				if (!string.IsNullOrEmpty(obj.OnActivate)) {
-					processedMap.Objects[obj.Name].Activate = BehaviourParser(processedMap, obj.Name, obj.OnActivate);
-					foreach (var target in BehaviourHelper.GetAllTarget(processedMap, obj.OnActivate.Split(';'))) {
-						var ps = HelperMethod.CutIntoAxisAlignVector2(obj.WorldPos.ToVector2(), target.WorldPos.ToVector2()).ToArray();
-						intLink.Add(new Line(Color.Cyan, ps));
-					}
-				}
-
-				if (!string.IsNullOrEmpty(obj.OnDeactivate)) {
-					processedMap.Objects[obj.Name].Deactivate = BehaviourParser(processedMap, obj.Name, obj.OnDeactivate);
-					foreach (var target in BehaviourHelper.GetAllTarget(processedMap, obj.OnDeactivate.Split(';'))) {
-						var ps = HelperMethod.CutIntoAxisAlignVector2(obj.WorldPos.ToVector2(), target.WorldPos.ToVector2()).ToArray();
-						intLink.Add(new Line(Color.OrangeRed, ps));
-					}
-				}
-			}
+			//build a static map without interactable object
+			var processedMap = new Map(mapwidth, mapheight, 3, f, w, o, collision.ToArray(), annotations);
 
 			//todo separate line that have the same coord
 			//var separator = new Vector2(1, 1);
@@ -140,9 +163,71 @@ namespace TimeIsUp {
 			//	}
 			//}
 
-			processedMap.InteractLink = intLink;
+			//parse and generate behaviour for interactable object
+			processedMap.InteractLink = ProcessInteractableObject(ref processedMap, interactableObj);
+
+			mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".lvl");
+			if (!File.Exists(mappath)) {
+				var mapdata = CompressHelper.Zip(JsonConvert.SerializeObject(processedMap));
+				File.WriteAllText(mappath, mapdata);
+
+			}
 
 			return processedMap;
+		}
+
+		public static Map LoadLvlMap(string mapname) {
+			var mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".lvl");
+			var map = JsonConvert.DeserializeObject<Map>(CompressHelper.UnZip(File.ReadAllText(mappath)));
+
+			var interactableObj = from obj in map.Objects
+								  where !string.IsNullOrEmpty(obj.Value.OnActivate) || !string.IsNullOrEmpty(obj.Value.OnDeactivate)
+								  select obj.Value;
+
+			map.InteractLink = ProcessInteractableObject(ref map, interactableObj);
+
+			return map;
+		}
+
+		public static Map LoadMap(string mapname) {
+
+			if (Constant.OnlyLoadTmxMap) {
+				return LoadTmxMap(mapname);
+			}
+
+			if (File.Exists(Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".lvl"))) {
+				return LoadLvlMap(mapname);
+			}
+			else {
+				return LoadTmxMap(mapname);
+			}
+		}
+
+		private static List<Line> ProcessInteractableObject(ref Map map, IEnumerable<Object> interactableObj) {
+
+			List<Line> intLink = new List<Line>();
+			foreach (var obj in interactableObj) {
+				if (!string.IsNullOrEmpty(obj.OnActivate)) {
+					map.Objects[obj.Name].Activate = BehaviourParser(map, obj.Name, obj.OnActivate);
+					foreach (var target in BehaviourHelper.GetAllTarget(map, obj.OnActivate.Split(';'))) {
+						if (target is null) {
+							continue;
+						}
+						var ps = HelperMethod.CutIntoAxisAlignVector2(obj.WorldPos.ToVector2(), target.WorldPos.ToVector2()).ToArray();
+						intLink.Add(new Line(Color.Cyan, ps));
+					}
+				}
+
+				if (!string.IsNullOrEmpty(obj.OnDeactivate)) {
+					map.Objects[obj.Name].Deactivate = BehaviourParser(map, obj.Name, obj.OnDeactivate);
+					foreach (var target in BehaviourHelper.GetAllTarget(map, obj.OnDeactivate.Split(';'))) {
+						var ps = HelperMethod.CutIntoAxisAlignVector2(obj.WorldPos.ToVector2(), target.WorldPos.ToVector2()).ToArray();
+						intLink.Add(new Line(Color.OrangeRed, ps));
+					}
+				}
+			}
+
+			return intLink;
 		}
 
 		private static Behaviour BehaviourParser(Map context, string objname, string behaviour) {
@@ -165,16 +250,32 @@ namespace TimeIsUp {
 				case CollisionTag.DoorClosed:
 				case CollisionTag.DoorOpened:
 				case CollisionTag.Wall:
-					result.X = pos.X - 0.3f;
-					result.Y = pos.Y - 0.3f;
 
 					switch (dir) {
 						case Direction.up:
+							result.X = pos.X - 0.3f;
+							result.Y = pos.Y - 0.3f;
 							result.Width = 1;
 							result.Height = 0.3f;
 							break;
 
 						case Direction.left:
+							result.X = pos.X - 0.3f;
+							result.Y = pos.Y - 0.3f;
+							result.Width = 0.3f;
+							result.Height = 1;
+							break;
+
+						case Direction.down:
+							result.X = pos.X - 0.3f;
+							result.Y = pos.Y + 0.4f;
+							result.Width = 1;
+							result.Height = 0.3f;
+							break;
+
+						case Direction.right:
+							result.X = pos.X + 0.4f;
+							result.Y = pos.Y - 0.3f;
 							result.Width = 0.3f;
 							result.Height = 1;
 							break;
@@ -227,17 +328,95 @@ namespace TimeIsUp {
 				case CollisionTag.Portal:
 					switch (dir) {
 						case Direction.up:
-							result.X = pos.X - 0.2f;
-							result.Y = pos.Y - 0.4f;
-							result.Width = 0.3f;
+							result.X = pos.X - 0.1f;
+							result.Y = pos.Y - 0.15f;
+							result.Width = 0.5f;
+							result.Height = 0.1f;
+							break;
+
+						case Direction.left:
+							result.X = pos.X - 0.15f;
+							result.Y = pos.Y - 0.1f;
+							result.Width = 0.1f;
+							result.Height = 0.5f;
+							break;
+
+						case Direction.down:
+							result.X = pos.X - 0.1f;
+							result.Y = pos.Y + 0.45f;
+							result.Width = 0.5f;
+							result.Height = 0.1f;
+							break;
+
+						case Direction.right:
+							result.X = pos.X + 0.45f;
+							result.Y = pos.Y - 0.1f;
+							result.Width = 0.1f;
+							result.Height = 0.5f;
+							break;
+					}
+					break;
+
+				case CollisionTag.PistonRetracted:
+					switch (dir) {
+						case Direction.up:
+							result.X = pos.X - 0.35f;
+							result.Y = pos.Y - 0.1f;
+							result.Width = 0.75f;
 							result.Height = 0.2f;
 							break;
 
 						case Direction.left:
-							result.X = pos.X - 0.4f;
+							result.X = pos.X - 0.1f;
+							result.Y = pos.Y - 0.35f;
+							result.Width = 0.2f;
+							result.Height = 0.75f;
+							break;
+
+						case Direction.down:
+							result.X = pos.X - 0.2f;
+							result.Y = pos.Y + 0.1f;
+							result.Width = 0.75f;
+							result.Height = 0.2f;
+							break;
+
+						case Direction.right:
+							result.X = pos.X + 0.1f;
 							result.Y = pos.Y - 0.2f;
 							result.Width = 0.2f;
-							result.Height = 0.3f;
+							result.Height = 0.75f;
+							break;
+					}
+					break;
+
+				case CollisionTag.PistonExtended:
+					switch (dir) {
+						case Direction.up:
+							result.X = pos.X - 0.45f;
+							result.Y = pos.Y + 0.35f;
+							result.Width = 0.75f;
+							result.Height = 0.2f;
+							break;
+
+						case Direction.left:
+							result.X = pos.X + 0.35f;
+							result.Y = pos.Y - 0.45f;
+							result.Width = 0.2f;
+							result.Height = 0.75f;
+							break;
+
+						case Direction.down:
+							result.X = pos.X - 0.25f;
+							result.Y = pos.Y - 0.55f;
+							result.Width = 0.75f;
+							result.Height = 0.2f;
+							break;
+
+						case Direction.right:
+							result.X = pos.X - 0.55f;
+							result.Y = pos.Y - 0.25f;
+							result.Width = 0.2f;
+							result.Height = 0.75f;
 							break;
 					}
 					break;

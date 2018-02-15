@@ -102,6 +102,84 @@ namespace TimeIsUp {
 			return new VT2(A.X / distance, A.Y / distance);
 		}
 
+		public static T[] RemoveAt<T>(this T[] source, int index) {
+			T[] dest = new T[source.Length - 1];
+			if (index > 0)
+				Array.Copy(source, 0, dest, 0, index);
+
+			if (index < source.Length - 1)
+				Array.Copy(source, index + 1, dest, index, source.Length - index - 1);
+
+			return dest;
+		}
+
+		public static bool IsNullOrEmpty<T>(this IEnumerable<T> source) {
+			if (source != null) {
+				foreach (T obj in source) {
+					return false;
+				}
+			}
+			return true;
+		}
+	}
+
+	static class SpriteRectNameExtensionMethod {
+
+		public static bool IsExtended(this SpriteSheetRectName piston) {
+			switch (piston) {
+				case SpriteSheetRectName.PistolExtended_N:
+				case SpriteSheetRectName.PistolExtended_W:
+				case SpriteSheetRectName.PistolExtended_S:
+				case SpriteSheetRectName.PistolExtended_E:
+					return true;
+				default:
+					return false;
+			}
+		}
+
+		public static bool IsRetracted(this SpriteSheetRectName piston) {
+			switch (piston) {
+				case SpriteSheetRectName.PistolRetracted_N:
+				case SpriteSheetRectName.PistolRetracted_W:
+				case SpriteSheetRectName.PistolRetracted_S:
+				case SpriteSheetRectName.PistolRetracted_E:
+					return true;
+				default:
+					return false;
+			}
+		}
+
+		public static SpriteSheetRectName ExtendPiston(this SpriteSheetRectName piston) {
+			switch (piston) {
+				case SpriteSheetRectName.PistolRetracted_N:
+					return SpriteSheetRectName.PistolExtended_N;
+				case SpriteSheetRectName.PistolRetracted_W:
+					return SpriteSheetRectName.PistolExtended_W;
+				case SpriteSheetRectName.PistolRetracted_S:
+					return SpriteSheetRectName.PistolExtended_S;
+				case SpriteSheetRectName.PistolRetracted_E:
+					return SpriteSheetRectName.PistolExtended_E;
+
+				default:
+					return piston;
+			}
+		}
+
+		public static SpriteSheetRectName RetractPiston(this SpriteSheetRectName piston) {
+			switch (piston) {
+				case SpriteSheetRectName.PistolExtended_N:
+					return SpriteSheetRectName.PistolRetracted_N;
+				case SpriteSheetRectName.PistolExtended_W:
+					return SpriteSheetRectName.PistolRetracted_W;
+				case SpriteSheetRectName.PistolExtended_S:
+					return SpriteSheetRectName.PistolRetracted_S;
+				case SpriteSheetRectName.PistolExtended_E:
+					return SpriteSheetRectName.PistolRetracted_E;
+				default:
+					return piston;
+			}
+		}
+
 		public static bool IsLever(this SpriteSheetRectName lever) {
 			switch (lever) {
 				case SpriteSheetRectName.WallSwitchOff_N:
@@ -290,6 +368,8 @@ namespace TimeIsUp {
 
 				case SpriteSheetRectName.WallStraight_N:
 				case SpriteSheetRectName.WallStraight_W:
+				case SpriteSheetRectName.WallStraight_S:
+				case SpriteSheetRectName.WallStraight_E:
 					result = CollisionTag.Wall;
 					break;
 
@@ -307,9 +387,23 @@ namespace TimeIsUp {
 
 				case SpriteSheetRectName.Portal_N:
 				case SpriteSheetRectName.Portal_W:
+				case SpriteSheetRectName.Portal_S:
+				case SpriteSheetRectName.Portal_E:
 					result = CollisionTag.Portal;
 					break;
-				default:
+
+				case SpriteSheetRectName.PistolExtended_N:
+				case SpriteSheetRectName.PistolExtended_W:
+				case SpriteSheetRectName.PistolExtended_S:
+				case SpriteSheetRectName.PistolExtended_E:
+					result = CollisionTag.PistonExtended;
+					break;
+
+				case SpriteSheetRectName.PistolRetracted_N:
+				case SpriteSheetRectName.PistolRetracted_W:
+				case SpriteSheetRectName.PistolRetracted_S:
+				case SpriteSheetRectName.PistolRetracted_E:
+					result = CollisionTag.PistonRetracted;
 					break;
 			}
 			return result;
@@ -329,17 +423,6 @@ namespace TimeIsUp {
 					return Direction.down;
 			}
 			return Direction.none;
-		}
-
-		public static T[] RemoveAt<T>(this T[] source, int index) {
-			T[] dest = new T[source.Length - 1];
-			if (index > 0)
-				Array.Copy(source, 0, dest, 0, index);
-
-			if (index < source.Length - 1)
-				Array.Copy(source, index + 1, dest, index, source.Length - index - 1);
-
-			return dest;
 		}
 	}
 

@@ -13,6 +13,7 @@ using System.Linq;
 using LilyPath;
 using System;
 using Microsoft.Xna.Framework.Input;
+using System.Text;
 
 namespace TimeIsUp.GameScreens {
 	class MainPlayScreen : Screen {
@@ -49,6 +50,9 @@ namespace TimeIsUp.GameScreens {
 		Player player;
 		Timer timer;
 		Label label_timer;
+		Label label_script;
+
+		Vector2 mousepos;
 
 		MessageBox msgbox;
 		string[] popups;
@@ -60,7 +64,7 @@ namespace TimeIsUp.GameScreens {
 		internal static Texture2D spritesheet;
 		internal static SpriteFont font;
 		internal static Dictionary<SpriteSheetRectName, Rectangle> spriterects;
-		private Vector2 pppp = new Vector2(0, -60);
+		private Vector2 mapRenderOffset = new Vector2(0, -60);
 
 		private Vector2 spawnpoint;
 		private Vector2 endpoint;
@@ -157,12 +161,14 @@ namespace TimeIsUp.GameScreens {
 			foreach (var obj in MovableObjects) {
 				obj.LoadContent(this);
 			}
-			var pbox = world.Create(spawnpoint.X, spawnpoint.Y, 0.5f, 0.5f);
+			var pbox = world.Create(spawnpoint.X, spawnpoint.Y, 0.5f, 0.5f).AddTags(CollisionTag.Player);
 			Object pobj = new Object() {
 				Name = "player",
 				CollsionBox = pbox,
-				TileType = SpriteSheetRectName.None
+				TileType = SpriteSheetRectName.None,
+				CollisionTag = CollisionTag.Player
 			};
+			pobj.CollsionBox.Data = pobj;
 			map.Objects.Add(pobj.Name, pobj);
 			player = new Player {
 				Object = pobj,
@@ -180,10 +186,14 @@ namespace TimeIsUp.GameScreens {
 			msgbox.LeftButtonPressed += (o, e) => msgboxLeftButtonPressed = true;
 			msgbox.RightButtonPressed += (o, e) => msgboxRightButtonPressed = true;
 			label_timer = new Label("", new Point(10, 10), new Vector2(50, 30), font) {
-				Origin = new Vector2(0, -20)
+				Origin = new Vector2(0, -10)
+			};
+			label_script = new Label("", new Point(10, 40), new Vector2(80, 200), font) {
+				Origin = new Vector2(0, -10)
 			};
 			canvas.AddElement("msgbox", msgbox);
 			canvas.AddElement("label_timer", label_timer);
+			canvas.AddElement("label_script", label_script);
 		}
 
 		public override void Shutdown() {
@@ -231,6 +241,8 @@ namespace TimeIsUp.GameScreens {
 						msgbox.Show("You finished the level in:" + Environment.NewLine + timer.ElapsedTime + " s" + Environment.NewLine + "Restart?", "Next lvl", "Exit", "Restart");
 						break;
 					}
+
+					DisplayObjectScript(player.WorldPos);
 
 					timer.Update(gameTime);
 
@@ -300,6 +312,33 @@ namespace TimeIsUp.GameScreens {
 			canvas.Update(gameTime, CONTENT_MANAGER.CurrentInputState, CONTENT_MANAGER.LastInputState);
 		}
 
+		private void DisplayObjectScript(Vector2 pos) {
+			var x = (int)(pos.X + 0.3f);
+			var y = (int)(pos.Y + 0.3f);
+
+			var obj = map.FindObject(kvp => kvp.Value.WorldPos.X == x && kvp.Value.WorldPos.Y == y);
+
+			var script = new StringBuilder();
+			script.AppendLine(string.Format("{0}:{1}", x, y));
+
+			script.AppendLine("OnActivate:");
+			if (obj != null && !string.IsNullOrEmpty(obj.OnActivate))
+				script.Append(string.Join("\n", obj.OnActivate.Split(';')));
+			script.AppendLine();
+			script.AppendLine("OnDeactivate:");
+			if (obj != null && !string.IsNullOrEmpty(obj.OnDeactivate))
+				script.Append(string.Join("\n", obj.OnDeactivate.Split(';')));
+
+			label_script.Text = script.ToString();
+		}
+
+		private Vector2 GetMousePos(MouseState currentMouseState) {
+			var p1 = currentMouseState.Position.ToVector2() - mapRenderOffset;
+			p1 = camera.TranslateFromScreenToWorld(p1);
+			p1 = p1.IsoToWorld();
+			return p1;
+		}
+
 		private void MoveCamera(KeyboardState currentKeyboardState, KeyboardState lastKeyboardState) {
 			camera.Centre = player.IsoPos;
 			//if (HelperMethod.IsKeyHold(Keys.Left, currentKeyboardState, lastKeyboardState)) {
@@ -338,7 +377,7 @@ namespace TimeIsUp.GameScreens {
 
 			mapRenderer.Draw(spriteBatch);
 
-			var depthoffset = 0.7f - ((player.WorldPos.X + player.WorldPos.Y) / maxdepth) - 0.002f;
+			var depthoffset = 0.7f - ((player.WorldPos.X + player.WorldPos.Y) / maxdepth) - 0.02f;
 			MovableObjects.ForEach(x => x.Draw(spriteBatch, gameTime, depthoffset));
 			spriteBatch.EndSpriteBatch();
 
@@ -366,7 +405,7 @@ namespace TimeIsUp.GameScreens {
 		IEnumerable<Vector2> InteractLink;
 
 		private void DrawLine(Line line) {
-			var pp = pppp;
+			var pp = mapRenderOffset;
 			if (line.Color == Color.Cyan) {
 				//a bit up and left
 				pp += new Vector2(1, 1);
@@ -377,7 +416,7 @@ namespace TimeIsUp.GameScreens {
 				pp -= new Vector2(1, 1);
 				pp -= new Vector2(1, 1);
 			}
-			
+
 			InteractLink = line.Points.Select(x => camera.TranslateFromWorldToScreen(x.WorldToIso()) + pp);
 
 			foreach (var p in InteractLink) {
@@ -389,20 +428,24 @@ namespace TimeIsUp.GameScreens {
 		}
 
 		private void DrawBox(IBox box) {
-			var p0 = new Vector2(box.X, box.Y).WorldToIso();
-			var p1 = new Vector2(box.X + box.Width, box.Y).WorldToIso();
-			var p2 = new Vector2(box.X + box.Width, box.Y + box.Height).WorldToIso();
-			var p3 = new Vector2(box.X, box.Y + box.Height).WorldToIso();
+			DrawRect(box.X, box.Y, box.Width, box.Height);
+		}
+
+		private void DrawRect(float x, float y, float width, float height) {
+			var p0 = new Vector2(x, y).WorldToIso();
+			var p1 = new Vector2(x + width, y).WorldToIso();
+			var p2 = new Vector2(x + width, y + height).WorldToIso();
+			var p3 = new Vector2(x, y + height).WorldToIso();
 
 			p0 = camera.TranslateFromWorldToScreen(p0);
 			p1 = camera.TranslateFromWorldToScreen(p1);
 			p2 = camera.TranslateFromWorldToScreen(p2);
 			p3 = camera.TranslateFromWorldToScreen(p3);
 
-			p0 += pppp;
-			p1 += pppp;
-			p2 += pppp;
-			p3 += pppp;
+			p0 += mapRenderOffset;
+			p1 += mapRenderOffset;
+			p2 += mapRenderOffset;
+			p3 += mapRenderOffset;
 
 			drawBatch.DrawLine(Pen.Red, p0, p1);
 			drawBatch.DrawLine(Pen.Red, p1, p2);

@@ -22,31 +22,33 @@ namespace TimeIsUp.GameScreens {
 			Name = "TransitionScreen";
 		}
 
-		//public override bool Init() {
-		//	base.Init();
+		public override bool Init() {
+			base.Init();
 
-		//	spritesheet = CONTENT_MANAGER.Sprites["spritesheet"];
-		//	font = CONTENT_MANAGER.Fonts["default"];
-		//	var temp = File.ReadAllText(@"Content/sprite/spritesheet.json");
-		//	spriterects = JsonConvert.DeserializeObject<List<KeyValuePair<string, Rectangle>>>(temp).ToDictionary(kvp => kvp.Key.ToEnum<SpriteSheetRectName>(), kvp => kvp.Value);
+			//todo implement some kind of map preview
+			#region minimap render
+			//spritesheet = CONTENT_MANAGER.Sprites["spritesheet"];
+			//font = CONTENT_MANAGER.Fonts["default"];
+			//var temp = File.ReadAllText(@"Content/sprite/spritesheet.json");
+			//spriterects = JsonConvert.DeserializeObject<List<KeyValuePair<string, Rectangle>>>(temp).ToDictionary(kvp => kvp.Key.ToEnum<SpriteSheetRectName>(), kvp => kvp.Value);
 
-		//	var bo = canvas.GetElement("button_open"); ;
-		//	var bts = canvas.GetElements().Where(x => x.GetType() == typeof(Button) && x != bo).Select(x => (Button)x).ToList();
+			//var bo = canvas.GetElement("button_open"); ;
+			//var bts = canvas.GetElements().Where(x => x.GetType() == typeof(Button) && x != bo).Select(x => (Button)x).ToList();
 
-		//	foreach (var bt in bts) {
-		//		bt.MouseClick += (o, e) => {
-		//			//todo update minimap
-		//			Button btt = (Button)o;
-		//			Map map = MapLoader.LoadMap(btt.Text);
-		//			MapRenderer mapRenderer = new MapRenderer(map);
-		//			var maxdepth = ((map.Width + 1) + (map.Height + 1) + (map.Depth + 1)) * 10;
-		//			mapRenderer.LoadContent(spritesheet, font, spriterects, maxdepth);
-		//			minimap = TextureRenderer.Render(mapRenderer.Draw, CONTENT_MANAGER.spriteBatch, new Vector2(800, 600), new Vector2(400, 0), Color.WhiteSmoke, 0.25f);
-		//		};
-		//	}
+			//foreach (var bt in bts) {
+			//	bt.MouseClick += (o, e) => {
+			//		Button btt = (Button)o;
+			//		Map map = MapLoader.LoadMap(btt.Text);
+			//		MapRenderer mapRenderer = new MapRenderer(map);
+			//		var maxdepth = ((map.Width + 1) + (map.Height + 1) + (map.Depth + 1)) * 10;
+			//		mapRenderer.LoadContent(spritesheet, font, spriterects, maxdepth);
+			//		minimap = TextureRenderer.Render(mapRenderer.Draw, CONTENT_MANAGER.spriteBatch, new Vector2(800, 600), new Vector2(400, 0), Color.WhiteSmoke, 0.25f);
+			//	};
+			//}
+			#endregion
 
-		//	return true;
-		//}
+			return true;
+		}
 
 		public override void Update(GameTime gameTime) {
 
