@@ -1,5 +1,7 @@
 ﻿namespace TimeIsUp {
 	enum SpriteSheetRectName {
+		Startup = -4,
+		Trigger = -3,
 		Popup = -2,
 		None = -1,
 		BlockHuge_E,
@@ -20,6 +22,10 @@
 		Portal_N,
 		Portal_S,
 		Portal_W,
+		PortalOff_E,
+		PortalOff_N,
+		PortalOff_S,
+		PortalOff_W,
 		SlabQuarter_S,
 		WallDoorClosed_N,
 		WallDoorClosed_W,

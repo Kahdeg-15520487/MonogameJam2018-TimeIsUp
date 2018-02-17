@@ -50,6 +50,10 @@ namespace TimeIsUp {
 					return CollisionResponses.Cross;
 				}
 
+				if (x.Other.HasTag(CollisionTag.Portal)) {
+					return CollisionResponses.Cross;
+				}
+
 				return CollisionResponses.Slide;
 			});
 

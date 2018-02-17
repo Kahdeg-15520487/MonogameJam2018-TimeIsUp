@@ -52,14 +52,14 @@ namespace TimeIsUp {
 		private void InitScreen() {
 
 			var playscreen = new MainPlayScreen(GraphicsDevice) {
-				Mapname = CONTENT_MANAGER.MapName ?? "lvl1"
+				MapName = CONTENT_MANAGER.MapName ?? "menu"
 			};
 
 			TransitionScreen transitionScreen = new TransitionScreen(GraphicsDevice) {
 				StartingDirectory = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map"),
 				SearchPattern = "*.tmx",
 				CallBack = x => {
-					playscreen.Mapname = x;
+					playscreen.MapName = x;
 					SCREEN_MANAGER.GotoScreen("MainPlayScreen");
 				}
 			};
@@ -67,13 +67,7 @@ namespace TimeIsUp {
 			SCREEN_MANAGER.AddScreen(playscreen);
 			SCREEN_MANAGER.AddScreen(transitionScreen);
 
-			if (string.IsNullOrEmpty(CONTENT_MANAGER.MapName)) {
-				SCREEN_MANAGER.GotoScreen("TransitionScreen");
-			}
-			else {
-				playscreen.Mapname = CONTENT_MANAGER.MapName;
-				SCREEN_MANAGER.GotoScreen("MainPlayScreen");
-			}
+			SCREEN_MANAGER.GotoScreen("MainPlayScreen");
 
 			SCREEN_MANAGER.Init();
 		}
@@ -90,6 +84,7 @@ namespace TimeIsUp {
 			#endregion
 
 			#region Load audio
+			CONTENT_MANAGER.LoadSound("door_close", "door_open", "footstep", "lever", "switch_pressed", "switch_released", "tele", "light_on", "light_off");
 			#endregion
 
 			InitScreen();

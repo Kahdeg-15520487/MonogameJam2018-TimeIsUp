@@ -1,6 +1,7 @@
 ﻿using Humper;
 using Humper.Responses;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Newtonsoft.Json;
@@ -17,7 +18,12 @@ namespace TimeIsUp {
 	class Player : IMovableObject {
 		AnimatedEntity animatedEntity;
 		SpriteFont font;
+		SoundEffectInstance walksfx;
+		SoundEffectInstance leversfx;
+		SoundEffectInstance floorswitchpressedsfx;
+		SoundEffectInstance floorswitchreleasedsfx;
 		MainPlayScreen screen;
+		Timer timer;
 
 		Direction dir;
 
@@ -55,6 +61,14 @@ namespace TimeIsUp {
 			animatedEntity.LoadContent(animationSpriteSheet);
 			animatedEntity.AddAnimation(anims);
 			animatedEntity.PlayAnimation(AnimationName.idle_right.ToString());
+
+			walksfx = CONTENT_MANAGER.Sounds["footstep"].CreateInstance();
+			walksfx.Volume = 0f;
+			leversfx = CONTENT_MANAGER.Sounds["lever"].CreateInstance();
+			floorswitchpressedsfx = CONTENT_MANAGER.Sounds["switch_pressed"].CreateInstance();
+			floorswitchreleasedsfx = CONTENT_MANAGER.Sounds["switch_released"].CreateInstance();
+
+			timer = new Timer();
 		}
 
 		private Animation LoadAnimation(string animname, List<KeyValuePair<string, Rectangle>> frames) {
@@ -79,6 +93,8 @@ namespace TimeIsUp {
 				Origin -= new VT2(0, 1f);
 			}
 
+			timer.Update(gameTime);
+
 			animatedEntity.Update(gameTime);
 		}
 
@@ -88,13 +104,22 @@ namespace TimeIsUp {
 				if (lastInteractableObject != null && lastInteractableObject.TileType.IsLever()) {
 					lastInteractableObject.TileType = lastInteractableObject.TileType.FlipSwitch();
 					if (lastInteractableObject.TileType.IsOn()) {
+						leversfx.Play();
 						lastInteractableObject.Activate(Object, lastInteractableObject);
 					}
 					else if (lastInteractableObject.TileType.IsOff()) {
+						leversfx.Play();
 						lastInteractableObject.Deactivate(Object, lastInteractableObject);
 					}
 				}
 			}
+		}
+
+		public void StopAllSfx() {
+			walksfx.Stop();
+			leversfx.Stop();
+			floorswitchpressedsfx.Stop();
+			floorswitchreleasedsfx.Stop();
 		}
 
 		private void MovePlayer(KeyboardState currentKeyboardState, KeyboardState lastKeyboardState, GameTime gameTime) {
@@ -115,12 +140,23 @@ namespace TimeIsUp {
 				direction = Direction.down;
 			}
 
+			if (direction != Direction.none && !timer.IsRunning) {
+				timer.Start();
+			}
+
+			if (timer.IsRunning && timer.ElapsedTime <= 1f) {
+				walksfx.Volume = timer.ElapsedTime;
+			}
+
 			switch (direction) {
 				case Direction.up:
 					Velocity = new VT2(0, -MovementSpeed);
 					dir = direction;
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_up.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_up.ToString());
+					}
+					if (walksfx.State != SoundState.Playing) {
+						walksfx.Play();
 					}
 					break;
 				case Direction.down:
@@ -129,12 +165,18 @@ namespace TimeIsUp {
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_down.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_down.ToString());
 					}
+					if (walksfx.State != SoundState.Playing) {
+						walksfx.Play();
+					}
 					break;
 				case Direction.right:
 					Velocity = new VT2(MovementSpeed, 0);
 					dir = direction;
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_right.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_right.ToString());
+					}
+					if (walksfx.State != SoundState.Playing) {
+						walksfx.Play();
 					}
 					break;
 				case Direction.left:
@@ -143,12 +185,18 @@ namespace TimeIsUp {
 					if (animatedEntity.CurntAnimationName != AnimationName.walk_left.ToString()) {
 						animatedEntity.PlayAnimation(AnimationName.walk_left.ToString());
 					}
+					if (walksfx.State != SoundState.Playing) {
+						walksfx.Play();
+					}
 					break;
 				case Direction.none:
 					var anme = "idle_" + dir.ToString();
 					if (animatedEntity.CurntAnimationName != anme) {
 						animatedEntity.PlayAnimation(anme);
 					}
+					walksfx.Stop();
+					walksfx.Volume = 0;
+					timer.Reset();
 					break;
 			}
 
@@ -167,7 +215,6 @@ namespace TimeIsUp {
 				}
 
 				if (x.Other.HasTag(CollisionTag.EndPoint)) {
-					screen.Win();
 					return CollisionResponses.Cross;
 				}
 
@@ -183,14 +230,34 @@ namespace TimeIsUp {
 			var floorswitch = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.FloorSwitch));
 			if (floorswitch != null) {
 				Object obj = (Object)floorswitch.Box.Data;
-				obj.TileType = SpriteSheetRectName.ButtonPressed_E;
-				obj.Activate(Object, obj);
-				lastInteractableObject = obj;
+				if (lastInteractableObject != obj && obj.TileType.IsOff() && floorswitchpressedsfx.State != SoundState.Playing) {
+					obj.TileType = SpriteSheetRectName.ButtonPressed_E;
+					floorswitchpressedsfx.Play();
+					obj.Activate(Object, obj);
+					lastInteractableObject = obj;
+				}
 			}
 			else {
 				if (lastInteractableObject != null && lastInteractableObject.TileType.IsFloorSwitch()) {
+					if (floorswitchreleasedsfx.State != SoundState.Playing) {
+						floorswitchreleasedsfx.Play();
+					}
 					lastInteractableObject.TileType = SpriteSheetRectName.Button_E;
 					lastInteractableObject.Deactivate(Object, lastInteractableObject);
+					lastInteractableObject = null;
+				}
+			}
+
+			var endpoint = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.EndPoint));
+			if (endpoint != null) {
+				Object obj = (Object)endpoint.Box.Data;
+				if (lastInteractableObject != obj) {
+					obj.Activate(Object, obj);
+					lastInteractableObject = obj;
+				}
+			}
+			else {
+				if (lastInteractableObject != null && lastInteractableObject.TileType.GetCollisionTag() == CollisionTag.EndPoint) {
 					lastInteractableObject = null;
 				}
 			}
@@ -216,7 +283,9 @@ namespace TimeIsUp {
 			var portal = move.Hits.FirstOrDefault(c => c.Box.HasTag(CollisionTag.Portal));
 			if (portal != null) {
 				Object obj = (Object)portal.Box.Data;
-				obj.Activate(Object, obj);
+				if (obj.TileType.IsOn()) {
+					obj.Activate(Object, obj);
+				}
 			}
 
 			animatedEntity.Position = IsoPos;
@@ -225,7 +294,7 @@ namespace TimeIsUp {
 
 		public void Draw(SpriteBatch spriteBatch, GameTime gameTime, float depth) {
 			//spriteBatch.DrawString(font, WorldPos.ToString(), IsoPos, Color.Black);
-			animatedEntity.Draw(spriteBatch, gameTime, isFalling ? 1f : depth);
+			animatedEntity.Draw(spriteBatch, gameTime, isFalling ? 1f : depth - 0.001f);
 		}
 	}
 }

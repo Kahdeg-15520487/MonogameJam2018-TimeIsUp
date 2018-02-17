@@ -7,7 +7,12 @@
 		public static readonly float TILE_HEIGHT_HALF = TILE_HEIGHT / 2;
 		public static readonly Microsoft.Xna.Framework.Vector2 SPRITE_ORIGIN = new Microsoft.Xna.Framework.Vector2(128, 512);
 
-		public static bool OnlyLoadTmxMap = true;
+		public static bool OnlyLoadTmxMap = false;
+
+		public static int OBJECT_MEMORY_LIMIT = 100;
+
+		public static string PLAYER_NAME = string.Empty;
+		public static string CALCULATION_RESULT = "0";
 	}
 	enum Direction {
 		none,
@@ -43,6 +48,7 @@
 		Slab = 1 << 11,       //
 
 		EndPoint = 1 << 12,     //if the player touch this, the player win aka cleared the level
-		Player = 1 << 13    //the player
+		Player = 1 << 13,    //the player
+		Trigger = 1 << 14	//a trigger that do something when the player cross it
 	}
 }

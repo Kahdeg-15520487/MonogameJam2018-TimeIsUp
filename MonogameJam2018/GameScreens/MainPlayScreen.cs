@@ -16,19 +16,23 @@ using Microsoft.Xna.Framework.Input;
 using System.Text;
 
 namespace TimeIsUp.GameScreens {
+
+	enum GameState {
+		None,
+		Ready,
+		Ingame,
+		Endgame,
+		MapEdit,
+		Pause,
+		ErrorLoadMap,
+		ShowDialog,
+		Exit
+	}
+
 	class MainPlayScreen : Screen {
 
-		enum GameState {
-			None,
-			Ready,
-			Ingame,
-			Endgame,
-			MapEdit,
-			Pause
-		}
-
-		Stack<GameState> gameStates;
-		GameState CurrentGameState {
+		internal Stack<GameState> gameStates;
+		internal GameState CurrentGameState {
 			get {
 				return gameStates.Peek();
 			}
@@ -43,23 +47,37 @@ namespace TimeIsUp.GameScreens {
 		Camera camera;
 		Map map;
 		MapRenderer mapRenderer;
-		public string Mapname { get; set; }
+		private string mapname = string.Empty;
+		public string MapName {
+			get => mapname;
+			set {
+				LastMapName = mapname;
+				mapname = value;
+			}
+		}
+		public string LastMapName { get; set; } = string.Empty;
 		internal static float maxdepth;
 		World world;
 		List<IMovableObject> MovableObjects;
 		Player player;
-		Timer timer;
+		internal Timer timer;
 		Label label_timer;
 		Label label_script;
 
 		Vector2 mousepos;
 
-		MessageBox msgbox;
+		internal MessageBox msgbox;
 		string[] popups;
 
-		bool isWin;
-		bool isDrawCollisionBox = true;
-		bool isDrawInteractLink = true;
+		internal bool isWin;
+		internal bool isExit;
+		internal bool isBehaviourChangeMap = false;
+		bool isDrawCollisionBox = false;
+		bool isDrawInteractLink = false;
+		bool isDisplayObjectProperties = false;
+
+		IEnumerable<Vector2> InteractLink;
+		private Vector2 pppp = Vector2.Zero;
 
 		internal static Texture2D spritesheet;
 		internal static SpriteFont font;
@@ -71,6 +89,7 @@ namespace TimeIsUp.GameScreens {
 		private bool msgboxMiddleButtonPressed;
 		private bool msgboxLeftButtonPressed;
 		private bool msgboxRightButtonPressed;
+		private Object startup;
 
 		public MainPlayScreen(GraphicsDevice device) : base(device, "MainPlayScreen") { }
 
@@ -98,7 +117,13 @@ namespace TimeIsUp.GameScreens {
 
 			timer.Reset();
 
-			map = MapLoader.LoadMap(Mapname);
+			map = MapLoader.LoadMap(MapName);
+
+			if (map is null) {
+				CurrentGameState = GameState.ErrorLoadMap;
+				return;
+			}
+
 			maxdepth = ((map.Width + 1) + (map.Height + 1) + (map.Depth + 1)) * 10;
 			mapRenderer = new MapRenderer(map);
 			mapRenderer.LoadContent(spritesheet, font, spriterects, maxdepth);
@@ -154,6 +179,11 @@ namespace TimeIsUp.GameScreens {
 				endpoint = new Vector2(ep.WorldPos.X, ep.WorldPos.Y);
 			}
 
+			startup = map.FindObject(kvp => kvp.Key.StartsWith("start"));
+			if (startup != null) {
+				MarkedForRemove.Add(startup);
+			}
+
 			foreach (var obj in MarkedForRemove) {
 				map.Objects.Remove(obj.Name);
 			}
@@ -181,7 +211,10 @@ namespace TimeIsUp.GameScreens {
 
 		public void InitUI() {
 			canvas = new Canvas();
-			msgbox = new MessageBox(new Point(280, 200), "text", "OK");
+			msgbox = new MessageBox(new Point(280, 200), "Loading", "OK") {
+				MiddleButtonHotkey = Keys.Enter,
+				LeftButtonHotkey = Keys.Back
+			};
 			msgbox.MiddleButtonPressed += (o, e) => msgboxMiddleButtonPressed = true;
 			msgbox.LeftButtonPressed += (o, e) => msgboxLeftButtonPressed = true;
 			msgbox.RightButtonPressed += (o, e) => msgboxRightButtonPressed = true;
@@ -207,8 +240,8 @@ namespace TimeIsUp.GameScreens {
 		public override void Update(GameTime gameTime) {
 
 			if (HelperMethod.IsKeyPress(Keys.Escape, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
-				if (CurrentGameState != GameState.Pause) {
-					msgbox.Show("Game Paused!", "Continue", "Exit", "Restart");
+				if (MapName != "menu" && CurrentGameState != GameState.Pause && CurrentGameState == GameState.Ingame) {
+					msgbox.Show("Game Paused!", "Continue", "Change lvl", "Restart");
 					timer.Stop();
 					gameStates.Push(GameState.Pause);
 				}
@@ -222,8 +255,29 @@ namespace TimeIsUp.GameScreens {
 			switch (CurrentGameState) {
 				case GameState.None:
 					CurrentGameState = GameState.Ready;
+					player?.StopAllSfx();
 					InitGame();
+					if (map is null) {
+						CurrentGameState = GameState.ErrorLoadMap;
+						msgbox.Show(string.Format("Map {0} not found!", MapName), "Reload");
+						break;
+					}
 					msgbox.Show("Ready?\n" + string.Join("\n", popups), "Go");
+					break;
+
+				case GameState.ErrorLoadMap:
+					if (msgboxMiddleButtonPressed) {
+						CurrentGameState = GameState.None;
+					}
+					break;
+
+				case GameState.ShowDialog:
+					if (msgboxMiddleButtonPressed) {
+						gameStates.Pop();
+						msgboxMiddleButtonPressed = false;
+						msgbox.Hide();
+						timer.Continue();
+					}
 					break;
 
 				case GameState.Ready:
@@ -232,17 +286,27 @@ namespace TimeIsUp.GameScreens {
 						CurrentGameState = GameState.Ingame;
 						msgbox.Hide();
 						timer.Start();
+						if (startup != null) {
+							map.Startup(null, startup);
+						}
 					}
 					break;
 				case GameState.Ingame:
 					if (isWin) {
 						CurrentGameState = GameState.Endgame;
 						timer.Stop();
-						msgbox.Show("You finished the level in:" + Environment.NewLine + timer.ElapsedTime + " s" + Environment.NewLine + "Restart?", "Next lvl", "Exit", "Restart");
+						if (LastMapName != "menu") {
+							msgbox.Show("You finished the level in:" + Environment.NewLine + timer.ElapsedTime + " s" + Environment.NewLine + "Next level : " + MapName, "Next lvl", "Change lvl", "Restart");
+						}
+						else {
+							msgboxMiddleButtonPressed = true;
+						}
 						break;
 					}
 
-					DisplayObjectScript(player.WorldPos);
+					if (isDisplayObjectProperties) {
+						DisplayObjectScript(player.WorldPos);
+					}
 
 					timer.Update(gameTime);
 
@@ -252,6 +316,11 @@ namespace TimeIsUp.GameScreens {
 
 					if (HelperMethod.IsKeyPress(Keys.O, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
 						isDrawInteractLink = !isDrawInteractLink;
+					}
+
+					if (HelperMethod.IsKeyPress(Keys.I, CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState)) {
+						isDisplayObjectProperties = !isDisplayObjectProperties;
+						label_script.IsVisible = isDisplayObjectProperties;
 					}
 
 					label_timer.Text = timer.ElapsedTime.ToString();
@@ -264,13 +333,17 @@ namespace TimeIsUp.GameScreens {
 					if (msgboxMiddleButtonPressed) {
 						msgboxMiddleButtonPressed = false;
 						//goto next level
+						if (!isBehaviourChangeMap) {
+							MapName = map.NextLevel;
+						}
+						CurrentGameState = GameState.None;
 						break;
 					}
 					if (msgboxLeftButtonPressed) {
 						msgboxLeftButtonPressed = false;
 						//goto main menu
 						CurrentGameState = GameState.None;
-						SCREEN_MANAGER.GoBack();
+						MapName = "levelChooser";
 						break;
 					}
 					if (msgboxRightButtonPressed) {
@@ -293,7 +366,7 @@ namespace TimeIsUp.GameScreens {
 						msgboxLeftButtonPressed = false;
 						//goto main menu
 						CurrentGameState = GameState.None;
-						SCREEN_MANAGER.GoBack();
+						MapName = "levelChooser";
 						break;
 					}
 					if (msgboxRightButtonPressed) {
@@ -303,11 +376,20 @@ namespace TimeIsUp.GameScreens {
 						break;
 					}
 					break;
+
+				case GameState.Exit:
+					if (msgboxMiddleButtonPressed) {
+						CONTENT_MANAGER.gameInstance.Exit();
+					}
+					break;
 				default:
 					break;
 			}
 
-			camera.Centre = player.IsoPos;
+			if (player != null) {
+				//camera.Centre = player.IsoPos;
+				MoveCamera(CONTENT_MANAGER.CurrentInputState.keyboardState, CONTENT_MANAGER.LastInputState.keyboardState);
+			}
 
 			canvas.Update(gameTime, CONTENT_MANAGER.CurrentInputState, CONTENT_MANAGER.LastInputState);
 		}
@@ -321,21 +403,24 @@ namespace TimeIsUp.GameScreens {
 			var script = new StringBuilder();
 			script.AppendLine(string.Format("{0}:{1}", x, y));
 
-			script.AppendLine("OnActivate:");
-			if (obj != null && !string.IsNullOrEmpty(obj.OnActivate))
-				script.Append(string.Join("\n", obj.OnActivate.Split(';')));
-			script.AppendLine();
-			script.AppendLine("OnDeactivate:");
-			if (obj != null && !string.IsNullOrEmpty(obj.OnDeactivate))
-				script.Append(string.Join("\n", obj.OnDeactivate.Split(';')));
+			if (obj != null) {
+				script.AppendLine("Name: " + obj.Name);
+				script.AppendLine("OnActivate:");
+				if (!string.IsNullOrEmpty(obj.OnActivate))
+					script.Append(string.Join("\n", obj.OnActivate.Split(';')));
+				script.AppendLine();
+				script.AppendLine("OnDeactivate:");
+				if (!string.IsNullOrEmpty(obj.OnDeactivate))
+					script.Append(string.Join("\n", obj.OnDeactivate.Split(';')));
+			}
 
 			label_script.Text = script.ToString();
 		}
 
 		private Vector2 GetMousePos(MouseState currentMouseState) {
-			var p1 = currentMouseState.Position.ToVector2() - mapRenderOffset;
+			var p1 = currentMouseState.Position.ToVector2();// + mapRenderOffset;
 			p1 = camera.TranslateFromScreenToWorld(p1);
-			p1 = p1.IsoToWorld();
+			//p1 = p1.IsoToWorld();
 			return p1;
 		}
 
@@ -369,40 +454,46 @@ namespace TimeIsUp.GameScreens {
 		}
 
 		public override void Draw(SpriteBatch spriteBatch, GameTime gameTime) {
-			if (map is null) {
-				return;
-			}
+			if (map != null) {
 
-			spriteBatch.BeginSpriteBatchWithCamera(camera, SpriteSortMode.BackToFront);
+				spriteBatch.BeginSpriteBatchWithCamera(camera, SpriteSortMode.BackToFront);
 
-			mapRenderer.Draw(spriteBatch);
+				mapRenderer.Draw(spriteBatch);
 
-			var depthoffset = 0.7f - ((player.WorldPos.X + player.WorldPos.Y) / maxdepth) - 0.02f;
-			MovableObjects.ForEach(x => x.Draw(spriteBatch, gameTime, depthoffset));
-			spriteBatch.EndSpriteBatch();
+				var depthoffset = 0.7f - ((player.WorldPos.X + player.WorldPos.Y) / maxdepth) - 0.002f;
+				MovableObjects.ForEach(x => x.Draw(spriteBatch, gameTime, 0.7f - ((x.WorldPos.X + x.WorldPos.Y) / maxdepth) - 0.002f));
+				spriteBatch.EndSpriteBatch();
 
-			if (isDrawCollisionBox) {
-				drawBatch.Begin();
-				var b = world.Bounds.ToRectangle();
-				var b1 = new Vector2(b.X, b.Y);
-				world.DrawDebug((int)b1.X, (int)b1.Y, b.Width, b.Height, DrawCell, DrawBox, DrawString);
-				drawBatch.End();
-			}
-
-			if (isDrawInteractLink) {
-				drawBatch.Begin();
-				foreach (var link in map.InteractLink) {
-					DrawLine(link);
+				if (isDrawCollisionBox) {
+					drawBatch.Begin();
+					var b = world.Bounds.ToRectangle();
+					var b1 = new Vector2(b.X, b.Y);
+					world.DrawDebug((int)b1.X, (int)b1.Y, b.Width, b.Height, DrawCell, DrawBox, DrawString);
+					drawBatch.End();
 				}
-				drawBatch.End();
+
+				if (isDrawInteractLink) {
+					drawBatch.Begin();
+					foreach (var link in map.InteractLink) {
+						DrawLine(link);
+					}
+					drawBatch.End();
+				}
+
+				//if (mousepos != Vector2.Zero) {
+				//	drawBatch.Begin();
+				//	//var x = (int)(mousepos.X + 0.3f);
+				//	//var y = (int)(mousepos.Y + 0.3f);
+				//	//DrawRect(mousepos.X, mousepos.Y, 1, 1);
+				//	DrawRectt(mousepos.X, mousepos.Y, 149, 149);
+				//	drawBatch.End();
+				//}
 			}
 
 			spriteBatch.BeginSpriteBatch(SpriteSortMode.FrontToBack);
 			canvas.Draw(spriteBatch, gameTime);
 			spriteBatch.EndSpriteBatch();
 		}
-
-		IEnumerable<Vector2> InteractLink;
 
 		private void DrawLine(Line line) {
 			var pp = mapRenderOffset;
@@ -429,6 +520,18 @@ namespace TimeIsUp.GameScreens {
 
 		private void DrawBox(IBox box) {
 			DrawRect(box.X, box.Y, box.Width, box.Height);
+		}
+
+		private void DrawRectt(float x, float y, float width, float height) {
+			var p0 = new Vector2(x, y);
+			var p1 = new Vector2(x + width, y);
+			var p2 = new Vector2(x + width, y + height);
+			var p3 = new Vector2(x, y + height);
+
+			drawBatch.DrawLine(Pen.Red, p0, p1);
+			drawBatch.DrawLine(Pen.Red, p1, p2);
+			drawBatch.DrawLine(Pen.Red, p2, p3);
+			drawBatch.DrawLine(Pen.Red, p3, p0);
 		}
 
 		private void DrawRect(float x, float y, float width, float height) {

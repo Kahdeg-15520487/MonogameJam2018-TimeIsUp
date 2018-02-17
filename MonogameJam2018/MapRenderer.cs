@@ -45,7 +45,7 @@ namespace TimeIsUp {
 			foreach (var obj in map.Objects.Values) {
 				//var dos = 0.7f - (((obj.Position.X * Constant.TILE_WIDTH_HALF) + (obj.Position.Y * Constant.TILE_HEIGHT_HALF)) / maxdepth);
 				//var dos = 0.7f - (((obj.Position.X) + (obj.Position.Y)) / maxdepth);
-				var dos = 0.7f - ((obj.WorldPos.X + obj.WorldPos.Y + obj.WorldPos.Z) / maxdepth) - 0.01f;
+				var dos = 0.7f - ((obj.WorldPos.X + obj.WorldPos.Y + obj.WorldPos.Z) / maxdepth) - 0.001f;
 				Vector2 IsoPos = obj.WorldPos.WorldToIso();
 				if (obj.TileType != SpriteSheetRectName.None) {
 					spriteBatch.Draw(spritesheet, IsoPos, spriterects[obj.TileType], Color.White, 0f, obj.SpriteOrigin, Constant.SCALE, SpriteEffects.None, dos);
@@ -54,7 +54,7 @@ namespace TimeIsUp {
 			}
 			foreach (var annotation in map.Annotations) {
 				Vector2 IsoPos = annotation.WorldPos.WorldToIso();
-				spriteBatch.DrawString(font, annotation.Content, IsoPos, annotation.Color, annotation.Rotation, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+				spriteBatch.DrawString(CONTENT_MANAGER.Fonts["hack"], annotation.Content.ProcessAnnotation(), IsoPos, annotation.Color, annotation.Rotation, Vector2.Zero, 0.75f, SpriteEffects.None, 0.8f);
 			}
 		}
 	}

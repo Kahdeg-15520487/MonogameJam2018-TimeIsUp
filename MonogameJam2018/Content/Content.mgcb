@@ -57,3 +57,57 @@
 /processorParam:TextureFormat=Compressed
 /build:font/hack.spritefont
 
+#begin sound/footstep.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:sound/footstep.wav
+
+#begin sound/door_close.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:sound/door_close.wav
+
+#begin sound/door_open.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:sound/door_open.wav
+
+#begin sound/lever.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:sound/lever.wav
+
+#begin sound/switch_pressed.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:sound/switch_pressed.wav
+
+#begin sound/switch_released.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:sound/switch_released.wav
+
+#begin sound/tele.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:sound/tele.wav
+
+#begin sound/light_off.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:sound/light_off.wav
+
+#begin sound/light_on.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:sound/light_on.wav
+

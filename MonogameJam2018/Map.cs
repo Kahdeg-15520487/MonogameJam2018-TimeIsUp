@@ -39,6 +39,9 @@ namespace TimeIsUp {
 
 		public List<Line> InteractLink { get; set; }
 		public string Metadata { get; set; }
+		public string NextLevel { get; set; } = string.Empty;
+
+		public Behaviour Startup { get; set; }
 
 
 		public Map(int width, int height, int depth, SpriteSheetRectName[,] f, SpriteSheetRectName[,] w, List<Object> o, Humper.Base.RectangleF[] collision, List<Annotation> a) {

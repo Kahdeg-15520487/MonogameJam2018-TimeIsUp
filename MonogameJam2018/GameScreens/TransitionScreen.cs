@@ -59,6 +59,13 @@ namespace TimeIsUp.GameScreens {
 			canvas.Update(gameTime, CONTENT_MANAGER.CurrentInputState, CONTENT_MANAGER.LastInputState);
 		}
 
+		public override void Draw(SpriteBatch spriteBatch, GameTime gameTime) {
+			device.Clear(Color.SlateGray);
+
+			base.Draw(spriteBatch, gameTime);
+		}
+
+
 		//public override void Draw(SpriteBatch spriteBatch, GameTime gameTime) {
 		//	base.Draw(spriteBatch, gameTime);
 

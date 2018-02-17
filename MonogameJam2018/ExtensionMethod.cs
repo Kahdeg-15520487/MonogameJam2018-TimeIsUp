@@ -7,6 +7,14 @@ using Utility;
 
 namespace TimeIsUp {
 	static class ExtensionMethod {
+
+		public static string ProcessAnnotation(this string annotation) {
+			var result = annotation;
+			result = result.Replace("{P}", Constant.PLAYER_NAME);
+			result = result.Replace("{C}", Constant.CALCULATION_RESULT);
+			return result;
+		}
+
 		public static T ToEnum<T>(this string value) {
 			return (T)Enum.Parse(typeof(T), value, true);
 		}
@@ -192,6 +200,34 @@ namespace TimeIsUp {
 			}
 		}
 
+		public static bool IsLight(this SpriteSheetRectName light) {
+			switch (light) {
+				case SpriteSheetRectName.WallLightOff_N:
+				case SpriteSheetRectName.WallLightOff_W:
+				case SpriteSheetRectName.WallLightOn_N:
+				case SpriteSheetRectName.WallLightOn_W:
+					return true;
+				default:
+					return false;
+			}
+		}
+
+		public static bool IsPortal(this SpriteSheetRectName portal) {
+			switch (portal) {
+				case SpriteSheetRectName.PortalOff_E:
+				case SpriteSheetRectName.PortalOff_W:
+				case SpriteSheetRectName.PortalOff_N:
+				case SpriteSheetRectName.PortalOff_S:
+				case SpriteSheetRectName.Portal_E:
+				case SpriteSheetRectName.Portal_W:
+				case SpriteSheetRectName.Portal_N:
+				case SpriteSheetRectName.Portal_S:
+					return true;
+				default:
+					return false;
+			}
+		}
+
 		public static bool IsOn(this SpriteSheetRectName swt) {
 			switch (swt) {
 				case SpriteSheetRectName.WallSwitchOn_W:
@@ -199,6 +235,13 @@ namespace TimeIsUp {
 
 				case SpriteSheetRectName.WallLightOn_W:
 				case SpriteSheetRectName.WallLightOn_N:
+
+				case SpriteSheetRectName.Portal_E:
+				case SpriteSheetRectName.Portal_W:
+				case SpriteSheetRectName.Portal_N:
+				case SpriteSheetRectName.Portal_S:
+
+				case SpriteSheetRectName.ButtonPressed_E:
 					return true;
 				default:
 					return false;
@@ -212,6 +255,13 @@ namespace TimeIsUp {
 
 				case SpriteSheetRectName.WallLightOff_W:
 				case SpriteSheetRectName.WallLightOff_N:
+
+				case SpriteSheetRectName.PortalOff_E:
+				case SpriteSheetRectName.PortalOff_W:
+				case SpriteSheetRectName.PortalOff_N:
+				case SpriteSheetRectName.PortalOff_S:
+
+				case SpriteSheetRectName.Button_E:
 					return true;
 				default:
 					return false;
@@ -259,25 +309,43 @@ namespace TimeIsUp {
 			}
 		}
 
-		public static SpriteSheetRectName TurnLightOn(this SpriteSheetRectName light) {
-			switch (light) {
+		public static SpriteSheetRectName TurnOn(this SpriteSheetRectName thingy) {
+			switch (thingy) {
 				case SpriteSheetRectName.WallLightOff_N:
 					return SpriteSheetRectName.WallLightOn_N;
 				case SpriteSheetRectName.WallLightOff_W:
 					return SpriteSheetRectName.WallLightOn_W;
+
+				case SpriteSheetRectName.PortalOff_E:
+					return SpriteSheetRectName.Portal_E;
+				case SpriteSheetRectName.PortalOff_W:
+					return SpriteSheetRectName.Portal_W;
+				case SpriteSheetRectName.PortalOff_N:
+					return SpriteSheetRectName.Portal_N;
+				case SpriteSheetRectName.PortalOff_S:
+					return SpriteSheetRectName.Portal_S;
 				default:
-					return light;
+					return thingy;
 			}
 		}
 
-		public static SpriteSheetRectName TurnLightOff(this SpriteSheetRectName light) {
-			switch (light) {
+		public static SpriteSheetRectName TurnOff(this SpriteSheetRectName thingy) {
+			switch (thingy) {
 				case SpriteSheetRectName.WallLightOn_N:
 					return SpriteSheetRectName.WallLightOff_N;
 				case SpriteSheetRectName.WallLightOn_W:
 					return SpriteSheetRectName.WallLightOff_W;
+
+				case SpriteSheetRectName.Portal_E:
+					return SpriteSheetRectName.PortalOff_E;
+				case SpriteSheetRectName.Portal_W:
+					return SpriteSheetRectName.PortalOff_W;
+				case SpriteSheetRectName.Portal_N:
+					return SpriteSheetRectName.PortalOff_N;
+				case SpriteSheetRectName.Portal_S:
+					return SpriteSheetRectName.PortalOff_S;
 				default:
-					return light;
+					return thingy;
 			}
 		}
 
@@ -338,10 +406,8 @@ namespace TimeIsUp {
 					break;
 
 				case SpriteSheetRectName.Button_E:
-					result = CollisionTag.FloorSwitch;
-					break;
 				case SpriteSheetRectName.ButtonPressed_E:
-					result = CollisionTag.None;
+					result = CollisionTag.FloorSwitch;
 					break;
 
 				case SpriteSheetRectName.Floor_E:
@@ -389,6 +455,10 @@ namespace TimeIsUp {
 				case SpriteSheetRectName.Portal_W:
 				case SpriteSheetRectName.Portal_S:
 				case SpriteSheetRectName.Portal_E:
+				case SpriteSheetRectName.PortalOff_E:
+				case SpriteSheetRectName.PortalOff_W:
+				case SpriteSheetRectName.PortalOff_N:
+				case SpriteSheetRectName.PortalOff_S:
 					result = CollisionTag.Portal;
 					break;
 
@@ -404,6 +474,10 @@ namespace TimeIsUp {
 				case SpriteSheetRectName.PistolRetracted_S:
 				case SpriteSheetRectName.PistolRetracted_E:
 					result = CollisionTag.PistonRetracted;
+					break;
+
+				case SpriteSheetRectName.Trigger:
+					result = CollisionTag.Trigger;
 					break;
 			}
 			return result;
@@ -470,6 +544,14 @@ namespace TimeIsUp {
 				new VT2(center.X,tail.Y),
 				tail
 			};
+		}
+
+		public static byte[] GetMD5CheckSum(string filename) {
+			using (var md5 = System.Security.Cryptography.MD5.Create()) {
+				using (var stream = System.IO.File.OpenRead(filename)) {
+					return md5.ComputeHash(stream);
+				}
+			}
 		}
 	}
 }

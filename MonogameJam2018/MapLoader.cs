@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 
 using Utility;
 using Utility.Storage;
+using System;
 
 namespace TimeIsUp {
 	class MapLoader {
@@ -17,11 +18,16 @@ namespace TimeIsUp {
 			//load the tiled map in
 			var mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".tmx");
 
-			var map = new TmxMap(mappath);
+			if (!File.Exists(mappath)) {
+				return null;
+			}
+
+			var tmxmap = new TmxMap(mappath);
+			var checksum = Convert.ToBase64String(HelperMethod.GetMD5CheckSum(mappath));
 
 			//define map dimesion
-			var mapwidth = map.Width;
-			var mapheight = map.Height;
+			var mapwidth = tmxmap.Width;
+			var mapheight = tmxmap.Height;
 
 			//declare map data array
 			SpriteSheetRectName[,] f;
@@ -30,9 +36,9 @@ namespace TimeIsUp {
 			List<Annotation> annotations = new List<Annotation>();
 
 			//serialize tiled map data to ingame map data
-			f = HelperMethod.Make2DArray(map.Layers["floor"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
-			w = HelperMethod.Make2DArray(map.Layers["wall"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
-			var objects = map.ObjectGroups["object"].Objects;
+			f = HelperMethod.Make2DArray(tmxmap.Layers["floor"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
+			w = HelperMethod.Make2DArray(tmxmap.Layers["wall"].Tiles.Select(x => (SpriteSheetRectName)(x.Gid - 1)).ToArray(), mapheight, mapwidth);
+			var objects = tmxmap.ObjectGroups["object"].Objects;
 
 			//generate collision bounding box
 			var collision = new List<Humper.Base.RectangleF>();
@@ -41,7 +47,7 @@ namespace TimeIsUp {
 				for (int x = 0; x < mapwidth; x++) {
 					if (f[y, x] == SpriteSheetRectName.None) {
 						var obj = new Object() {
-							Name = "hole" + holecount,
+							Name = "hole" + holecount++,
 							WorldPos = new Vector3(x, y, 0),
 							SpriteOrigin = Constant.SPRITE_ORIGIN,
 							TileType = SpriteSheetRectName.None,
@@ -58,15 +64,17 @@ namespace TimeIsUp {
 			}
 
 			//generate map border collision box
-			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, 0.3f, map.Height));
+			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, 0.3f, tmxmap.Height));
 			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, 0 - 0.3f, mapwidth, 0.3f));
-			collision.Add(new Humper.Base.RectangleF(mapwidth - 0.3f, 0 - 0.3f, 0.3f, map.Height));
+			collision.Add(new Humper.Base.RectangleF(mapwidth - 0.3f, 0 - 0.3f, 0.3f, tmxmap.Height));
 			collision.Add(new Humper.Base.RectangleF(0 - 0.3f, mapheight - 0.3f, mapwidth, 0.3f));
 
 			//process objects
 			List<Object> interactableObj = new List<Object>();
 			foreach (var oo in objects) {
 				var objname = oo.Name;
+				var x = (float)oo.X / tmxmap.TileHeight - 1;
+				var y = (float)oo.Y / tmxmap.TileHeight - 1;
 
 				if (oo.Tile is null) {
 					if (objname.StartsWith("popup")) {
@@ -77,10 +85,36 @@ namespace TimeIsUp {
 							MetaData = oo.Text.Value
 						});
 					}
+					else if (objname.StartsWith("trig")) {
+						//trigger
+						var obj = new Object() {
+							Name = objname,
+							WorldPos = new Vector3(x, y, 0),
+							TileType = SpriteSheetRectName.Trigger,
+							Activate = BehaviourHelper.NoAction(),
+							OnActivate = string.Empty,
+							Deactivate = BehaviourHelper.NoAction(),
+							OnDeactivate = string.Empty,
+							Memory = new Stack<string>()
+						};
+						interactableObj.Add(obj);
+						o.Add(obj);
+					}
+					else if (objname.StartsWith("start")) {
+						var obj = new Object() {
+							Name = objname,
+							TileType = SpriteSheetRectName.Startup,
+							Activate = BehaviourHelper.NoAction(),
+							OnActivate = oo.Properties["OnActivate"],
+							Deactivate = BehaviourHelper.NoAction(),
+							OnDeactivate = string.Empty,
+							Memory = new Stack<string>()
+						};
+						interactableObj.Add(obj);
+						o.Add(obj);
+					}
 					else {
 						//map annotation
-						var x = (float)oo.X / map.TileHeight - 1;
-						var y = (float)oo.Y / map.TileHeight - 1;
 						var color = new Color(oo.Text.Color.R, oo.Text.Color.G, oo.Text.Color.B);
 						var rotation = HelperFunction.DegreeToRadian((float)oo.Rotation);
 						annotations.Add(new Annotation(x, y, oo.Text.Value, color, rotation));
@@ -89,8 +123,6 @@ namespace TimeIsUp {
 				else {
 					//game object
 					var objectiletype = (SpriteSheetRectName)(oo.Tile.Gid - 1);
-					var x = (float)oo.X / map.TileHeight - 1;
-					var y = (float)oo.Y / map.TileHeight - 1;
 					if (objectiletype != SpriteSheetRectName.None) {
 						var obj = new Object() {
 							Name = objname,
@@ -107,7 +139,9 @@ namespace TimeIsUp {
 							obj.BoundingBox = GetCollsionBox(new Vector2(x, y), objectiletype);
 							obj.CollisionTag = objectiletype.GetCollisionTag();
 						}
-
+						//if (oo.Name == "endpoint" && oo.Properties.ContainsKey("NextLevel")) {
+						//	nextlvl = oo.Properties["NextLevel"];
+						//}
 						bool isObjInteractable = false;
 						if (oo.Properties.ContainsKey("OnActivate")) {
 							obj.OnActivate = oo.Properties["OnActivate"];
@@ -134,6 +168,24 @@ namespace TimeIsUp {
 								collision.Add(portalBase);
 								break;
 							case SpriteSheetRectName.Portal_E:
+								portalBase = new Humper.Base.RectangleF(obj.WorldPos.X + 0.5f, obj.WorldPos.Y - 0.3f, 0.2f, 1f);
+								collision.Add(portalBase);
+								break;
+
+							case SpriteSheetRectName.PortalOff_N:
+								portalBase = new Humper.Base.RectangleF(obj.WorldPos.X - 0.3f, obj.WorldPos.Y - 0.3f, 1f, 0.2f);
+								collision.Add(portalBase);
+								break;
+							case SpriteSheetRectName.PortalOff_W:
+								portalBase = new Humper.Base.RectangleF(obj.WorldPos.X - 0.3f, obj.WorldPos.Y - 0.3f, 0.2f, 1f);
+								collision.Add(portalBase);
+								break;
+
+							case SpriteSheetRectName.PortalOff_S:
+								portalBase = new Humper.Base.RectangleF(obj.WorldPos.X - 0.3f, obj.WorldPos.Y + 0.5f, 1f, 0.2f);
+								collision.Add(portalBase);
+								break;
+							case SpriteSheetRectName.PortalOff_E:
 								portalBase = new Humper.Base.RectangleF(obj.WorldPos.X + 0.5f, obj.WorldPos.Y - 0.3f, 0.2f, 1f);
 								collision.Add(portalBase);
 								break;
@@ -165,10 +217,14 @@ namespace TimeIsUp {
 
 			//parse and generate behaviour for interactable object
 			processedMap.InteractLink = ProcessInteractableObject(ref processedMap, interactableObj);
+			var startup = processedMap.FindObject(kvp => kvp.Key.StartsWith("start"));
+			if (startup!= null) {
+				processedMap.Startup = startup.Activate;
+			}
 
 			mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".lvl");
 			if (!File.Exists(mappath)) {
-				var mapdata = CompressHelper.Zip(JsonConvert.SerializeObject(processedMap));
+				var mapdata = string.Format("{0}|{1}", checksum, CompressHelper.Zip(JsonConvert.SerializeObject(processedMap)));
 				File.WriteAllText(mappath, mapdata);
 
 			}
@@ -178,7 +234,21 @@ namespace TimeIsUp {
 
 		public static Map LoadLvlMap(string mapname) {
 			var mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".lvl");
-			var map = JsonConvert.DeserializeObject<Map>(CompressHelper.UnZip(File.ReadAllText(mappath)));
+			if (!File.Exists(mappath)) {
+				return null;
+			}
+
+			var mapdata = File.ReadAllText(mappath).Split('|');
+			mappath = Path.Combine(CONTENT_MANAGER.LocalRootPath, "map", mapname + ".tmx");
+
+			if (File.Exists(mappath)) {
+				var checksum = Convert.ToBase64String(HelperMethod.GetMD5CheckSum(mappath));
+				if (string.Compare(checksum, mapdata[0]) != 0) {
+					return LoadTmxMap(mapname);
+				}
+			}
+
+			var map = JsonConvert.DeserializeObject<Map>(CompressHelper.UnZip(mapdata[1]));
 
 			var interactableObj = from obj in map.Objects
 								  where !string.IsNullOrEmpty(obj.Value.OnActivate) || !string.IsNullOrEmpty(obj.Value.OnDeactivate)
@@ -221,6 +291,9 @@ namespace TimeIsUp {
 				if (!string.IsNullOrEmpty(obj.OnDeactivate)) {
 					map.Objects[obj.Name].Deactivate = BehaviourParser(map, obj.Name, obj.OnDeactivate);
 					foreach (var target in BehaviourHelper.GetAllTarget(map, obj.OnDeactivate.Split(';'))) {
+						if (target is null) {
+							continue;
+						}
 						var ps = HelperMethod.CutIntoAxisAlignVector2(obj.WorldPos.ToVector2(), target.WorldPos.ToVector2()).ToArray();
 						intLink.Add(new Line(Color.OrangeRed, ps));
 					}

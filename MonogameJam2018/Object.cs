@@ -111,6 +111,7 @@ namespace TimeIsUp {
 				CollisionTag = collisionTag,
 				OnActivate = onactivate,
 				OnDeactivate = ondeactivate,
+				Memory = new Stack<string>(),
 				MetaData = metadata
 			};
 		}
